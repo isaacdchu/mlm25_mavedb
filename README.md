@@ -4,3 +4,6 @@ Understanding the functional consequences of genetic variants is a cornerstone o
 
 [MaveDB](https://mavedb.org/)
 > Rubin, A.F., Stone, J., Bianchi, A.H. et al. MaveDB 2024: a curated community database with over seven million variant effects from multiplexed functional assays. Genome Biol 26, 13 (2025). https://doi.org/10.1186/s13059-025-03476-y
+
+[ESM C](https://www.evolutionaryscale.ai/blog/esm-cambrian)
+> ESM Team. "ESM Cambrian: Revealing the mysteries of proteins with unsupervised learning." EvolutionaryScale, 2024, https://evolutionaryscale.ai/blog/esm-cambrian.

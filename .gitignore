@@ -1,0 +1,9 @@
+data/*
+!data/
+!data/test/
+!data/train/
+data/test/*
+data/train/*
+!data/test/README.md
+!data/train/README.md
+!data/README.md
