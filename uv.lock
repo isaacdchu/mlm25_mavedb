@@ -667,6 +667,11 @@ dependencies = [
     { name = "torch" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pylint" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "esm", specifier = ">=3.2.1.post1" },
@@ -678,6 +683,9 @@ requires-dist = [
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "torch", specifier = ">=2.8.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pylint", specifier = ">=3.3.8" }]
 
 [[package]]
 name = "mccabe"

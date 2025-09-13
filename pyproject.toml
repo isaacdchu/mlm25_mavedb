@@ -14,3 +14,8 @@ dependencies = [
     "seaborn>=0.13.2",
     "torch>=2.8.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pylint>=3.3.8",
+]
