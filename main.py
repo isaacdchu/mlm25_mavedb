@@ -6,9 +6,9 @@ https://github.com/evolutionaryscale/esm/blob/main/cookbook/tutorials/2_embed.ip
 '''
 
 import os
-from esm.sdk import client
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import CancelledError, TimeoutError, ThreadPoolExecutor
 from typing import Sequence
+from esm.sdk import client
 
 from esm.sdk.api import (
     ESM3InferenceClient,
@@ -55,12 +55,13 @@ def batch_embed(
         for future in futures:
             try:
                 results.append(future.result())
-            except Exception as e:
+            except (CancelledError, TimeoutError) as e:
                 results.append(ESMProteinError(500, str(e)))
                 print(f"Error embedding sequence: {e}")
     return results
 
-def plot_embeddings_at_layer(all_mean_embeddings: list[torch.Tensor], layer_idx: int, df: pd.DataFrame):
+def plot_embeddings_at_layer(all_mean_embeddings: list[torch.Tensor], layer_idx: int,
+                             df: pd.DataFrame):
     stacked_mean_embeddings = torch.stack(
         [embedding[layer_idx, :] for embedding in all_mean_embeddings]
     ).detach().cpu().to(torch.float32).numpy()
