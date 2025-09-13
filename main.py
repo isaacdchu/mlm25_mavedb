@@ -6,10 +6,13 @@ https://github.com/evolutionaryscale/esm/blob/main/cookbook/tutorials/2_embed.ip
 '''
 
 import os
-from concurrent.futures import CancelledError, TimeoutError, ThreadPoolExecutor
+from concurrent.futures import (
+    CancelledError,
+    TimeoutError as FuturesTimeoutError,
+    ThreadPoolExecutor
+)
 from typing import Sequence
 from esm.sdk import client
-
 from esm.sdk.api import (
     ESM3InferenceClient,
     ESMProtein,
@@ -18,19 +21,15 @@ from esm.sdk.api import (
     LogitsOutput,
     ProteinType,
 )
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
 import torch
-
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import adjusted_rand_score
 
 N_KMEANS_CLUSTERS = 3
-
 EMBEDDING_CONFIG = LogitsConfig(
     sequence=True, return_embeddings=True, return_hidden_states=True
 )
@@ -55,7 +54,7 @@ def batch_embed(
         for future in futures:
             try:
                 results.append(future.result())
-            except (CancelledError, TimeoutError) as e:
+            except (CancelledError, FuturesTimeoutError) as e:
                 results.append(ESMProteinError(500, str(e)))
                 print(f"Error embedding sequence: {e}")
     return results
