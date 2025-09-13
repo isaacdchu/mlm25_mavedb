@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+src/aasp/__init__.py
+src/aasp/data_handler/data_handler.py
+src/mavedb.egg-info/PKG-INFO
+src/mavedb.egg-info/SOURCES.txt
+src/mavedb.egg-info/dependency_links.txt
+src/mavedb.egg-info/requires.txt
+src/mavedb.egg-info/top_level.txt
