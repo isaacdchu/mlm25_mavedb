@@ -1,1 +1,1 @@
-__version__ = "0.1.0"
+from aasp.data_handler.data_handler import thingy
