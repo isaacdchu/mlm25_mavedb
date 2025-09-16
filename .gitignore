@@ -1,4 +1,5 @@
 .DS_Store
+notebooks/__pycache__/
 data/*
 !data/
 !data/test/
