@@ -1,8 +1,32 @@
-import sys
+'''
+This script validates whether a submission file meets the required format and content standards.
+It checks for:
+1. Valid file path
+2. CSV file type
+3. Correct shape (118421, 2)
+4. Correct columns ("accession", "score")
+5. Numeric values in "score" column
+6. No NaN values in "score" column
+7. Valid and in-order accessions in "accession" column as per "data/sample_submission.csv"
+'''
+
+from sys import argv
 from pathlib import Path
 import pandas as pd
 
 def validate(submission: str) -> tuple[bool, str]:
+    """ Validates a submission file.
+
+    The submission file must meet the aforementioned criteria to be considered valid.
+    If any of the criteria are not met, the function returns False and a message indicating the issues.
+
+    Args:
+        submission (str): Path to the submission file.
+    Returns:
+        tuple[bool, str]: A tuple containing a boolean indicating success or failure,
+                            and a message string with details about the validation.
+    """
+
     success: bool = True
     message: str = ""
 
@@ -66,6 +90,16 @@ def validate(submission: str) -> tuple[bool, str]:
     return (success, message)
 
 def main(*args) -> None:
+    """ Main function for validating submission files.
+
+    Multiple submission files can be validated in one run through command line arguments.
+
+    Args:
+        *args: Variable length argument list of submission file paths.
+    Returns:
+        None
+    """
+    
     print("----------------------------------------------------------------------")
     for submission in args:
         print(f"\tValidating submission:\t{submission}")
@@ -80,4 +114,4 @@ def main(*args) -> None:
     exit(0)
 
 if __name__ == "__main__":
-    main(*sys.argv[1:])
+    main(*argv[1:])
