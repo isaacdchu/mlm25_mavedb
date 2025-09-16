@@ -3,6 +3,7 @@ Example of using the ESM Forge SDK to compute and visualize protein embeddings
 This will use credits from your ESM account
 Code adapted from the ESM tutorial:
 https://github.com/evolutionaryscale/esm/blob/main/cookbook/tutorials/2_embed.ipynb
+"ask.csv" taken from https://www.biorxiv.org/content/10.1101/2024.10.23.619915v1
 '''
 
 import os
