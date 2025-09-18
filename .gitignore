@@ -1,11 +1,11 @@
 .DS_Store
 notebooks/__pycache__/
-data/*
-!data/
-!data/test/
-!data/train/
-data/test/*
-data/train/*
-!data/test/README.md
-!data/train/README.md
-!data/README.md
+# data/*
+# !data/
+# !data/test/
+# !data/train/
+# data/test/*
+# data/train/*
+# !data/test/README.md
+# !data/train/README.md
+# !data/README.md
