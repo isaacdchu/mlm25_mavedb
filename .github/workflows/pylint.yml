@@ -25,11 +25,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install uv
-        uv sync                        # install deps from manifest (if you use uv)
-        source .venv/bin/activate      # uv creates/uses .venv
+        uv sync                        # install dependencies
+        source .venv/bin/activate      # use virtual environment
         pip install -e .               # make project importable
-        pip install pylint || true     # ensure pylint available if not in manifest
-    - name: Analysing the code with pylint
+    - name: Analyzing the code with pylint
       run: |
+        which python
         source .venv/bin/activate
+        which python
         pylint $(git ls-files '*.py')
