@@ -30,14 +30,6 @@ jobs:
         pip install -e .               # make project importable
     - name: Analyzing the code with pylint
       run: |
-        which python
         source .venv/bin/activate
-        which python
-        which pylint
-        pylint --version
-        echo "Testing python imports"
-        python -c "from esm.sdk import client"
-        echo "Syncing dependencies"
-        uv sync
         echo "Starting pylint analysis..."
         uv run pylint $(git ls-files '*.py' | grep -v '^example\.py$')
