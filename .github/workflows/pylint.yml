@@ -40,4 +40,4 @@ jobs:
         echo "Syncing dependencies"
         uv sync
         echo "Starting pylint analysis..."
-        pylint $(git ls-files '*.py')
+        uv run pylint $(git ls-files '*.py')
