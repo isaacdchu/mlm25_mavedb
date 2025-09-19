@@ -33,4 +33,7 @@ jobs:
         which python
         source .venv/bin/activate
         which python
+        which pylint
+        pylint --version
+        echo "Starting pylint analysis..."
         pylint $(git ls-files '*.py')
