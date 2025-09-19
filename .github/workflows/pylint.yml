@@ -35,5 +35,8 @@ jobs:
         which python
         which pylint
         pylint --version
+        python
+        from esm.sdk import client
+        exit(0)
         echo "Starting pylint analysis..."
         pylint $(git ls-files '*.py')
