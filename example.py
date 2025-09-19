@@ -28,8 +28,8 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import adjusted_rand_score
 
-N_KMEANS_CLUSTERS = 3
-EMBEDDING_CONFIG = LogitsConfig(
+N_KMEANS_CLUSTERS: int = 3
+EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
     sequence=True, return_embeddings=True, return_hidden_states=True
 )
 
@@ -112,7 +112,29 @@ def plot_embeddings_at_layer(
     )
     plt.xlabel("PC 1")
     plt.ylabel("PC 2")
-    plt.show()
+
+def get_model(model_type: str) -> ESM3InferenceClient:
+    """
+    Initialize and return an ESM3InferenceClient model using the provided model type.
+    Requires the ESM_API_KEY environment variable to be set.
+    Args:
+        model_type (str): The type of ESM model to use (e.g., "esmc-300m-2024-12")
+    Returns:
+        ESM3InferenceClient: An instantiated ESM Forge client
+    Raises:
+        ValueError: If the ESM_API_KEY environment variable is not set
+    """
+    load_dotenv()  # take environment variables from .env file
+    token: str | None = os.environ.get("ESM_API_KEY", None)
+    if token is None:
+        raise ValueError("ESM_API_KEY environment variable not set")
+    model: ESM3InferenceClient = client(
+        model=model_type,
+        url="https://forge.evolutionaryscale.ai",
+        token=token,
+    )
+    del token
+    return model
 
 def main() -> None:
     """
@@ -124,16 +146,8 @@ def main() -> None:
     5. Summarize embeddings by taking the mean across the sequence dimension.
     6. Visualize the embeddings at specified layers using PCA and KMeans clustering.
     """
-    load_dotenv()  # take environment variables from .env file
-    token: str | None = os.environ.get("ESM_API_KEY", None)
-    if token is None:
-        raise ValueError("ESM_API_KEY environment variable not set")
-    model: ESM3InferenceClient = client(
-        model="esmc-6b-2024-12",
-        url="https://forge.evolutionaryscale.ai",
-        token=token,
-        request_timeout=5
-    )
+    # Initialize the model and data
+    model: ESM3InferenceClient = get_model("esmc-600m-2024-12")
     adk_path = "adk.csv"
     df = pd.read_csv(adk_path)
     df = df[["org_name", "sequence", "lid_type", "temperature"]]
@@ -145,8 +159,15 @@ def main() -> None:
     outputs: Sequence[LogitsOutput] = batch_embed(model, df["sequence"].tolist())
     all_hidden_states: list[torch.Tensor] = []
     for output in outputs:
-        if isinstance(output.hidden_states, torch.Tensor):
-            all_hidden_states.append(output.hidden_states)
+        if isinstance(output, ESMProteinError):
+            print(f"Error embedding sequence: {output}")
+            print(f"{output}")
+            continue
+        if not isinstance(output.hidden_states, torch.Tensor):
+            print(f"Error: hidden_states of {output} \
+                  is not a tensor: {type(output.hidden_states)}")
+            continue
+        all_hidden_states.append(output.hidden_states)
 
     # we'll summarize the embeddings using their mean across the sequence dimension
     # which allows us to compare embeddings for sequences of different lengths
@@ -158,6 +179,8 @@ def main() -> None:
     print("embedding shape [num_layers, hidden_size]:", all_mean_embeddings[0].shape)
     plot_embeddings_at_layer(all_mean_embeddings, layer_idx=30, df=df)
     plot_embeddings_at_layer(all_mean_embeddings, layer_idx=12, df=df)
+    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=0, df=df)
+    plt.show()
 
 if __name__ == "__main__":
     main()
