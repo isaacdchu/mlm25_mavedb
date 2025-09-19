@@ -37,5 +37,7 @@ jobs:
         pylint --version
         echo "Testing python imports"
         python -c "from esm.sdk import client"
+        echo "Syncing dependencies"
+        uv sync
         echo "Starting pylint analysis..."
         pylint $(git ls-files '*.py')
