@@ -2,13 +2,15 @@
 Utility functions and constants for data processing and API interactions.
 '''
 
+import os
+from pathlib import Path
 import requests
 
 # All file paths
-RAW_TRAIN_PATH = "../data/train/raw_train.csv"
-RAW_TEST_PATH = "../data/test/raw_test.csv"
-SEQUENCE_MAP_PATH = "../data/train/processed_train.csv"
-PROCESSED_TEST_PATH = "../data/test/processed_test.csv"
+RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
+RAW_TEST_PATH: os.PathLike = Path("../data/test/raw_test.csv")
+SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train/processed_train.csv")
+PROCESSED_TEST_PATH: os.PathLike = Path("../data/test/processed_test.csv")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
