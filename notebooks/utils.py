@@ -4,7 +4,9 @@ Utility functions and constants for data processing and API interactions.
 
 import os
 from pathlib import Path
+import pickle
 import requests
+
 
 # All file paths
 RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
@@ -49,3 +51,25 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     return sequence
 
 # TODO: add helper functions for loading/saving the ensp-sequence maps using pickle
+
+def pickle_dictionary(file_location, dict_to_pickle):
+    """
+    turns a dictionary into a pickle(rick)
+    Args:
+        file_location (str): file location of where you want to dump the pickle(rick)
+        dict_to_pickle (dict): dictionary that you want to pickle(rick)
+    """
+    with open(file_location, "wb") as f:
+        pickle.dump(dict_to_pickle)
+
+def unpickle(file_location):
+    """
+    unpickles a pkl file into dictionary
+    Args:
+        file_location (str): file location of where the pickle is 
+    Returns:
+        dictionary: dictionary of pickle
+    """
+    with open(file_location, "rb") as f:
+        d = pickle.load(f)
+        return d
