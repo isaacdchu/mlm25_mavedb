@@ -32,6 +32,8 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
             to avoid redundant API calls. e.g., {"ENSP00000354587": "MEEPQSDPSV..."}
     Returns:
         str: Full protein sequence as a string
+    Raises:
+        ValueError: If the API request fails or returns an error status code
     """
     if raw_ensp in ensp_sequence_map:
         return ensp_sequence_map[raw_ensp]
@@ -47,5 +49,37 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
         raise ValueError(f"No sequence found for {ensp}")
     ensp_sequence_map[raw_ensp] = sequence
     return sequence
+
+def to_hgvs(raw_ensp: str, ref_long: str, pos: int, alt_long: str) -> str:
+    """
+    Convert variant information to HGVS notation.
+    Args:
+        raw_ensp (str): Ensembl Protein ID (ENSP00000XXXXXX.X)
+        ref_long (str): Reference amino acid (eg Pro for P/Proline)
+        pos (int): Position of the variant
+        alt_long (str): Alternate amino acid (eg Leu for L/Leucine)
+    Returns:
+        str: HGVS notation (e.g., "ENSP00000354587.3:p.Pro175Leu")
+    """
+    return f"{raw_ensp}:p.{ref_long}{pos}{alt_long}"
+
+def get_vep_data(hgvs: str) -> dict:
+    """
+    Fetch variant effect prediction data from Ensembl VEP API.
+    Assumes that hgvs is correctly formatted.
+    Args:
+        hgvs (str): HGVS notation of the variant (e.g., "ENSP00000354587.3:p.R175H")
+    Returns:
+        dict: Parsed JSON response from the VEP API
+    Raises:
+        ValueError: If the API request fails or returns an error status code
+    """
+    response: requests.Response = requests.get(
+        f"{ENSEMBL_API}/vep/human/hgvs/{hgvs}",
+        headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT)
+    if response.status_code != 200:
+        raise ValueError(f"Error fetching VEP data for {hgvs}: {response.status_code}")
+    return response.json()
 
 # TODO: add helper functions for loading/saving the ensp-sequence maps using pickle
