@@ -52,30 +52,93 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     ensp_sequence_map[raw_ensp] = sequence
     return sequence
 
-def to_hgvs(raw_ensp: str, ref_long: str, pos: int, alt_long: str) -> str:
+def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> str:
+    """
+    Parses strand and alt_long to return a nucleotide sequence.
+    Args:
+        strand (int): Strand information (1 or -1)
+        alt_long (str): Alternate amino acid (eg Leu for L/Leucine)
+    Returns:
+        str: Nucleotide sequence of alt_long
+    """
+    # Note: there are multiple codons for each amino acid; we choose one arbitrarily
+    # Nucleotide-level differences are insignificant for our purposes
+    # TODO: handle cases where ref_nucleotides == alt_nucleotides
+    # Strand is 1
+    protein_to_codon_p1: dict[str, str] = {
+        "Arg": "CGA", "Ala": "GCA", "Asn": "AAC", "Asp": "GAC",
+        "Cys": "TGC", "Gln": "CAA", "Glu": "GAA", "Gly": "GGA",
+        "His": "CAC", "Ile": "ATA", "Leu": "CTA", "Lys": "AAA",
+        "Met": "ATG", "Phe": "TTC", "Pro": "CCA", "Ser": "TCA",
+        "Thr": "ACA", "Trp": "TGG", "Tyr": "TAC", "Val": "GTA",
+        "Ter": "TAA"  # Stop codon
+    }
+    # Strand is -1
+    protein_to_codon_n1: dict[str, str] = {
+        "Arg": "ACG", "Ala": "TGC", "Asn": "GTT", "Asp": "GTC",
+        "Cys": "GCA", "Gln": "TTG", "Glu": "TTC", "Gly": "TCC",
+        "His": "GTG", "Ile": "TAT", "Leu": "TAG", "Lys": "TTT",
+        "Met": "TAC", "Phe": "GAA", "Pro": "TGG", "Ser": "AGT",
+        "Thr": "TGT", "Trp": "CCA", "Tyr": "GTA", "Val": "CAT",
+        "Ter": "TTA"  # Stop codon
+    }
+    alt_nucleotides: str = ""
+    if (strand == 1):
+        alt_nucleotides = protein_to_codon_p1.get(alt_long, "")
+    elif (strand == -1):
+        alt_nucleotides = protein_to_codon_n1.get(alt_long, "")
+    else:
+        raise ValueError(f"Invalid strand value: {strand}")
+    if (ref_nucleotides == alt_nucleotides):
+        raise ValueError(f"Reference and alternate nucleotides are the same: {ref_nucleotides}")
+    return alt_nucleotides
+
+def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
     """
     Convert variant information to HGVS notation.
     Args:
         raw_ensp (str): Ensembl Protein ID (ENSP00000XXXXXX.X)
-        ref_long (str): Reference amino acid (eg Pro for P/Proline)
         pos (int): Position of the variant
         alt_long (str): Alternate amino acid (eg Leu for L/Leucine)
     Returns:
         str: HGVS notation (e.g., "ENSP00000354587.3:p.Pro175Leu")
     """
-    return f"{raw_ensp}:p.{ref_long}{pos}{alt_long}"
+    ensp: str = raw_ensp.split(".")[0]  # Remove version number if present
+    translation_response: requests.Response = requests.get(
+        f"{ENSEMBL_API}/map/translation/{ensp}/{pos}..{pos}",
+        headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT
+    )
+    mappings_info: dict[str, Any] = translation_response.json().get("mappings", [{}])[0]
+    seq_region_name: str = mappings_info.get("seq_region_name", "")
+    start: int = mappings_info.get("start", 0)
+    end: int = mappings_info.get("end", 0)
+    strand: int = mappings_info.get("strand", 0)
 
-def get_vep_data(hgvs: str) -> dict:
+    region_response: requests.Response = requests.get(
+        f"{ENSEMBL_API}/info/region/{seq_region_name}",
+        headers={"Content-Type": "text/plain"},
+        timeout=TIMEOUT
+    )
+    ref_nucleotides: str = region_response.text.strip()
+
+    nucleotide_change: str = get_nucleotide_change(ref_nucleotides, alt_long, strand)
+    return f"{seq_region_name}:g.{start}_{end}delins{nucleotide_change}"
+
+def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
     """
     Fetch variant effect prediction data from Ensembl VEP API.
     Assumes that hgvs is correctly formatted.
     Args:
-        hgvs (str): HGVS notation of the variant (e.g., "ENSP00000354587.3:p.R175H")
+        raw_ensp (str): Ensembl Protein ID (ENSP00000XXXXXX.X)
+        pos (int): Position of the variant
+        alt_long (str): Alternate amino acid (eg Leu for L/Leucine)
     Returns:
         dict: Parsed JSON response from the VEP API
     Raises:
         ValueError: If the API request fails or returns an error status code
     """
+    hgvs = to_hgvs(raw_ensp, pos, alt_long)
     response: requests.Response = requests.get(
         f"{ENSEMBL_API}/vep/human/hgvs/{hgvs}",
         headers={"Content-Type": "application/json"},
