@@ -5,8 +5,8 @@ Utility functions and constants for data processing and API interactions.
 import os
 from pathlib import Path
 import pickle
+from typing import Any
 import requests
-
 
 # All file paths
 RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
@@ -84,26 +84,26 @@ def get_vep_data(hgvs: str) -> dict:
         raise ValueError(f"Error fetching VEP data for {hgvs}: {response.status_code}")
     return response.json()
 
-# TODO: add helper functions for loading/saving the ensp-sequence maps using pickle
-
-def pickle_dictionary(file_location, dict_to_pickle):
+def dict_to_pickle(file_location: os.PathLike, dictionary: dict[Any, Any]) -> None:
     """
-    turns a dictionary into a pickle(rick)
+    Turns a dictionary into a pickle
     Args:
-        file_location (str): file location of where you want to dump the pickle(rick)
-        dict_to_pickle (dict): dictionary that you want to pickle(rick)
+        file_location (str): file location of where you want to dump the dictionary
+        dictionary (dict): dictionary that you want to pickle
+    Returns:
+        None
     """
     with open(file_location, "wb") as f:
-        pickle.dump(dict_to_pickle)
+        pickle.dump(dictionary, f)
 
-def unpickle(file_location):
+def pickle_to_dict(file_location: os.PathLike) -> dict[Any, Any]:
     """
-    unpickles a pkl file into dictionary
+    Unpickles a pkl file into a dictionary
     Args:
         file_location (str): file location of where the pickle is 
     Returns:
-        dictionary: dictionary of pickle
+        dict: dictionary of pickle
     """
     with open(file_location, "rb") as f:
-        d = pickle.load(f)
-        return d
+        dictionary = pickle.load(f)
+        return dictionary
