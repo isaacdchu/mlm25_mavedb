@@ -84,12 +84,12 @@ def get_vep_data(hgvs: str) -> dict:
         raise ValueError(f"Error fetching VEP data for {hgvs}: {response.status_code}")
     return response.json()
 
-def dict_to_pickle(file_location: os.PathLike, dictionary: dict[Any, Any]) -> None:
+def dict_to_pickle(dictionary: dict[Any, Any], file_location: os.PathLike) -> None:
     """
     Turns a dictionary into a pickle
     Args:
-        file_location (str): file location of where you want to dump the dictionary
         dictionary (dict): dictionary that you want to pickle
+        file_location (str): file location of where you want to dump the dictionary
     Returns:
         None
     """
