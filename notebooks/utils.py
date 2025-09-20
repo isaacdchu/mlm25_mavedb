@@ -13,15 +13,15 @@ RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
 RAW_TEST_PATH: os.PathLike = Path("../data/test/raw_test.csv")
 PROCESSED_TEST_PATH: os.PathLike = Path("../data/test/processed_test.csv")
 PROCESSED_TRAIN_PATH: os.PathLike = Path("../data/train/processed_train.csv")
-TRAIN_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train_ensp_sequence_map.pkl")
-TEST_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/test_ensp_sequence_map.pkl")
+TRAIN_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_sequence_map.pkl")
+TEST_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/test/test_ensp_sequence_map.pkl")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
 ENSEMBL_API = "https://rest.ensembl.org"
 
 # Configuration constants
-TIMEOUT = 3  # seconds
+TIMEOUT = 10  # seconds
 
 # Helper functions
 def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
