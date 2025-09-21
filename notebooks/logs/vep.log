@@ -1,0 +1,289 @@
+INFO:root:CLAs: data\train\raw_train.csv data\train\train_vep.pkl 0
+INFO:root:Saving index 0 through 99.
+INFO:root:Saved successfully
+INFO:root:Saving index 99 through 199.
+INFO:root:Saved successfully
+INFO:root:Saving index 199 through 299.
+INFO:root:Saved successfully
+INFO:root:Saving index 299 through 399.
+INFO:root:Saved successfully
+INFO:root:Saving index 399 through 499.
+INFO:root:Saved successfully
+INFO:root:Saving index 499 through 599.
+INFO:root:Saved successfully
+INFO:root:Saving index 599 through 699.
+INFO:root:Saved successfully
+INFO:root:Saving index 699 through 799.
+INFO:root:Saved successfully
+INFO:root:Saving index 799 through 899.
+INFO:root:Saved successfully
+INFO:root:Saving index 899 through 999.
+INFO:root:Saved successfully
+INFO:root:Saving index 999 through 1099.
+INFO:root:Saved successfully
+INFO:root:Saving index 1099 through 1199.
+INFO:root:Saved successfully
+INFO:root:Saving index 1199 through 1299.
+INFO:root:Saved successfully
+INFO:root:Saving index 1299 through 1399.
+INFO:root:Saved successfully
+INFO:root:Saving index 1399 through 1499.
+INFO:root:Saved successfully
+INFO:root:Saving index 1499 through 1599.
+INFO:root:Saved successfully
+INFO:root:Saving index 1599 through 1699.
+INFO:root:Saved successfully
+INFO:root:Saving index 1699 through 1799.
+INFO:root:Saved successfully
+INFO:root:Saving index 1799 through 1899.
+INFO:root:Saved successfully
+INFO:root:Saving index 1899 through 1999.
+INFO:root:Saved successfully
+INFO:root:Saving index 1999 through 2099.
+INFO:root:Saved successfully
+INFO:root:Saving index 2099 through 2199.
+INFO:root:Saved successfully
+INFO:root:Saving index 2199 through 2299.
+INFO:root:Saved successfully
+INFO:root:Saving index 2299 through 2399.
+INFO:root:Saved successfully
+INFO:root:Saving index 2399 through 2499.
+INFO:root:Saved successfully
+INFO:root:Saving index 2499 through 2599.
+INFO:root:Saved successfully
+INFO:root:Saving index 2599 through 2699.
+INFO:root:Saved successfully
+INFO:root:Saving index 2699 through 2799.
+INFO:root:Saved successfully
+INFO:root:Saving index 2799 through 2899.
+INFO:root:Saved successfully
+INFO:root:Saving index 2899 through 2999.
+INFO:root:Saved successfully
+INFO:root:Saving index 2999 through 3099.
+INFO:root:Saved successfully
+INFO:root:Saving index 3099 through 3199.
+INFO:root:Saved successfully
+INFO:root:Saving index 3199 through 3299.
+INFO:root:Saved successfully
+INFO:root:Saving index 3299 through 3399.
+INFO:root:Saved successfully
+INFO:root:Saving index 3399 through 3499.
+INFO:root:Saved successfully
+INFO:root:Saving index 3499 through 3599.
+INFO:root:Saved successfully
+INFO:root:Saving index 3599 through 3699.
+INFO:root:Saved successfully
+INFO:root:Saving index 3699 through 3799.
+INFO:root:Saved successfully
+INFO:root:Saving index 3799 through 3899.
+INFO:root:Saved successfully
+INFO:root:Saving index 3899 through 3999.
+INFO:root:Saved successfully
+INFO:root:Saving index 3999 through 4099.
+INFO:root:Saved successfully
+INFO:root:Saving index 4099 through 4199.
+INFO:root:Saved successfully
+INFO:root:Saving index 4199 through 4299.
+INFO:root:Saved successfully
+INFO:root:Saving index 4299 through 4399.
+INFO:root:Saved successfully
+INFO:root:Saving index 4399 through 4499.
+INFO:root:Saved successfully
+INFO:root:Saving index 4499 through 4599.
+INFO:root:Saved successfully
+INFO:root:Saving index 4599 through 4699.
+INFO:root:Saved successfully
+INFO:root:Saving index 4699 through 4799.
+INFO:root:Saved successfully
+INFO:root:Saving index 4799 through 4899.
+INFO:root:Saved successfully
+INFO:root:Saving index 4899 through 4999.
+INFO:root:Saved successfully
+INFO:root:Saving index 4999 through 5099.
+INFO:root:Saved successfully
+INFO:root:Saving index 5099 through 5199.
+INFO:root:Saved successfully
+INFO:root:Saving index 5199 through 5299.
+INFO:root:Saved successfully
+INFO:root:Saving index 5299 through 5399.
+INFO:root:Saved successfully
+INFO:root:Saving index 5399 through 5499.
+INFO:root:Saved successfully
+INFO:root:Saving index 5499 through 5599.
+INFO:root:Saved successfully
+INFO:root:Saving index 5599 through 5699.
+INFO:root:Saved successfully
+INFO:root:Saving index 5699 through 5799.
+INFO:root:Saved successfully
+INFO:root:Saving index 5799 through 5899.
+INFO:root:Saved successfully
+INFO:root:Saving index 5899 through 5999.
+INFO:root:Saved successfully
+ERROR:root:Unexpected error: HTTPSConnectionPool(host='rest.ensembl.org', port=443): Read timed out. (read timeout=10)
+INFO:root:Processed up through index 5999 before error. Start from index 6000 to continue work.
+2025-09-21 11:16:59,039 - INFO - CLAs: data\train\raw_train.csv data\train\train_vep.pkl 6000
+2025-09-21 11:21:22,017 - INFO - Saving index 0 through 6099.
+2025-09-21 11:21:22,030 - INFO - Saved successfully
+2025-09-21 11:26:08,483 - INFO - Saving index 6099 through 6199.
+2025-09-21 11:26:08,496 - INFO - Saved successfully
+2025-09-21 11:30:42,501 - INFO - Saving index 6199 through 6299.
+2025-09-21 11:30:42,510 - INFO - Saved successfully
+2025-09-21 11:34:59,976 - INFO - Saving index 6299 through 6399.
+2025-09-21 11:34:59,989 - INFO - Saved successfully
+2025-09-21 11:35:51,532 - WARNING - Process interrupted by user at index 6420. Last saved index was 6399. Start from index 6400 to continue work.
+2025-09-21 11:35:51,534 - INFO - Processed up through index 6399 before error. Start from index 6400 to continue work.
+2025-09-21 11:36:36,492 - INFO - CLAs: data\train\raw_train.csv data\train\train_vep.pkl 6400
+2025-09-21 11:40:51,340 - INFO - Saving index 0 through 6499.
+2025-09-21 11:40:51,352 - INFO - Saved successfully
+2025-09-21 11:45:23,868 - INFO - Saving index 6499 through 6599.
+2025-09-21 11:45:23,878 - INFO - Saved successfully
+2025-09-21 11:49:57,754 - INFO - Saving index 6599 through 6699.
+2025-09-21 11:49:57,765 - INFO - Saved successfully
+2025-09-21 11:54:30,489 - INFO - Saving index 6699 through 6799.
+2025-09-21 11:54:30,502 - INFO - Saved successfully
+2025-09-21 11:59:03,747 - INFO - Saving index 6799 through 6899.
+2025-09-21 11:59:03,758 - INFO - Saved successfully
+2025-09-21 12:03:44,722 - INFO - Saving index 6899 through 6999.
+2025-09-21 12:03:44,733 - INFO - Saved successfully
+2025-09-21 12:08:38,714 - INFO - Saving index 6999 through 7099.
+2025-09-21 12:08:38,727 - INFO - Saved successfully
+2025-09-21 12:13:24,234 - INFO - Saving index 7099 through 7199.
+2025-09-21 12:13:24,247 - INFO - Saved successfully
+2025-09-21 12:18:14,006 - INFO - Saving index 7199 through 7299.
+2025-09-21 12:18:14,019 - INFO - Saved successfully
+2025-09-21 12:22:51,720 - INFO - Saving index 7299 through 7399.
+2025-09-21 12:22:51,724 - INFO - Saved successfully
+2025-09-21 12:27:27,342 - INFO - Saving index 7399 through 7499.
+2025-09-21 12:27:27,345 - INFO - Saved successfully
+2025-09-21 12:32:05,304 - INFO - Saving index 7499 through 7599.
+2025-09-21 12:32:05,307 - INFO - Saved successfully
+2025-09-21 12:36:42,708 - INFO - Saving index 7599 through 7699.
+2025-09-21 12:36:42,711 - INFO - Saved successfully
+2025-09-21 12:41:19,442 - INFO - Saving index 7699 through 7799.
+2025-09-21 12:41:19,445 - INFO - Saved successfully
+2025-09-21 12:45:59,532 - INFO - Saving index 7799 through 7899.
+2025-09-21 12:45:59,535 - INFO - Saved successfully
+2025-09-21 12:50:34,913 - INFO - Saving index 7899 through 7999.
+2025-09-21 12:50:34,915 - INFO - Saved successfully
+2025-09-21 12:55:10,756 - INFO - Saving index 7999 through 8099.
+2025-09-21 12:55:10,759 - INFO - Saved successfully
+2025-09-21 12:59:49,966 - INFO - Saving index 8099 through 8199.
+2025-09-21 12:59:49,969 - INFO - Saved successfully
+2025-09-21 13:04:33,192 - INFO - Saving index 8199 through 8299.
+2025-09-21 13:04:33,195 - INFO - Saved successfully
+2025-09-21 13:09:14,623 - INFO - Saving index 8299 through 8399.
+2025-09-21 13:09:14,626 - INFO - Saved successfully
+2025-09-21 13:13:53,458 - INFO - Saving index 8399 through 8499.
+2025-09-21 13:13:53,461 - INFO - Saved successfully
+2025-09-21 13:18:28,873 - INFO - Saving index 8499 through 8599.
+2025-09-21 13:18:28,876 - INFO - Saved successfully
+2025-09-21 13:23:02,185 - INFO - Saving index 8599 through 8699.
+2025-09-21 13:23:02,188 - INFO - Saved successfully
+2025-09-21 13:27:24,152 - INFO - Saving index 8699 through 8799.
+2025-09-21 13:27:24,155 - INFO - Saved successfully
+2025-09-21 13:31:57,021 - INFO - Saving index 8799 through 8899.
+2025-09-21 13:31:57,024 - INFO - Saved successfully
+2025-09-21 13:36:28,827 - INFO - Saving index 8899 through 8999.
+2025-09-21 13:36:28,830 - INFO - Saved successfully
+2025-09-21 13:40:59,198 - INFO - Saving index 8999 through 9099.
+2025-09-21 13:40:59,201 - INFO - Saved successfully
+2025-09-21 13:45:32,215 - INFO - Saving index 9099 through 9199.
+2025-09-21 13:45:32,217 - INFO - Saved successfully
+2025-09-21 13:50:07,852 - INFO - Saving index 9199 through 9299.
+2025-09-21 13:50:07,854 - INFO - Saved successfully
+2025-09-21 13:54:41,272 - INFO - Saving index 9299 through 9399.
+2025-09-21 13:54:41,275 - INFO - Saved successfully
+2025-09-21 13:59:15,750 - INFO - Saving index 9399 through 9499.
+2025-09-21 13:59:15,752 - INFO - Saved successfully
+2025-09-21 14:03:48,229 - INFO - Saving index 9499 through 9599.
+2025-09-21 14:03:48,232 - INFO - Saved successfully
+2025-09-21 14:08:21,781 - INFO - Saving index 9599 through 9699.
+2025-09-21 14:08:21,784 - INFO - Saved successfully
+2025-09-21 14:12:53,819 - INFO - Saving index 9699 through 9799.
+2025-09-21 14:12:53,822 - INFO - Saved successfully
+2025-09-21 14:17:24,877 - INFO - Saving index 9799 through 9899.
+2025-09-21 14:17:24,880 - INFO - Saved successfully
+2025-09-21 14:22:03,608 - INFO - Saving index 9899 through 9999.
+2025-09-21 14:22:03,611 - INFO - Saved successfully
+2025-09-21 14:26:37,018 - INFO - Saving index 9999 through 10099.
+2025-09-21 14:26:37,021 - INFO - Saved successfully
+2025-09-21 14:31:03,473 - INFO - Saving index 10099 through 10199.
+2025-09-21 14:31:03,476 - INFO - Saved successfully
+2025-09-21 14:35:33,482 - INFO - Saving index 10199 through 10299.
+2025-09-21 14:35:33,485 - INFO - Saved successfully
+2025-09-21 14:39:58,021 - INFO - Saving index 10299 through 10399.
+2025-09-21 14:39:58,024 - INFO - Saved successfully
+2025-09-21 14:44:27,513 - INFO - Saving index 10399 through 10499.
+2025-09-21 14:44:27,516 - INFO - Saved successfully
+2025-09-21 14:48:54,235 - INFO - Saving index 10499 through 10599.
+2025-09-21 14:48:54,237 - INFO - Saved successfully
+2025-09-21 14:53:25,991 - INFO - Saving index 10599 through 10699.
+2025-09-21 14:53:25,994 - INFO - Saved successfully
+2025-09-21 14:57:59,119 - INFO - Saving index 10699 through 10799.
+2025-09-21 14:57:59,122 - INFO - Saved successfully
+2025-09-21 15:02:33,973 - INFO - Saving index 10799 through 10899.
+2025-09-21 15:02:33,976 - INFO - Saved successfully
+2025-09-21 15:07:03,122 - INFO - Saving index 10899 through 10999.
+2025-09-21 15:07:03,125 - INFO - Saved successfully
+2025-09-21 15:11:31,832 - INFO - Saving index 10999 through 11099.
+2025-09-21 15:11:31,835 - INFO - Saved successfully
+2025-09-21 15:16:00,079 - INFO - Saving index 11099 through 11199.
+2025-09-21 15:16:00,081 - INFO - Saved successfully
+2025-09-21 15:20:26,300 - INFO - Saving index 11199 through 11299.
+2025-09-21 15:20:26,303 - INFO - Saved successfully
+2025-09-21 15:24:33,539 - INFO - Saving index 11299 through 11399.
+2025-09-21 15:24:33,542 - INFO - Saved successfully
+2025-09-21 15:29:00,328 - INFO - Saving index 11399 through 11499.
+2025-09-21 15:29:00,331 - INFO - Saved successfully
+2025-09-21 15:33:32,167 - INFO - Saving index 11499 through 11599.
+2025-09-21 15:33:32,170 - INFO - Saved successfully
+2025-09-21 15:37:58,071 - INFO - Saving index 11599 through 11699.
+2025-09-21 15:37:58,074 - INFO - Saved successfully
+2025-09-21 15:42:28,512 - INFO - Saving index 11699 through 11799.
+2025-09-21 15:42:28,515 - INFO - Saved successfully
+2025-09-21 15:46:53,258 - INFO - Saving index 11799 through 11899.
+2025-09-21 15:46:53,261 - INFO - Saved successfully
+2025-09-21 15:51:16,699 - INFO - Saving index 11899 through 11999.
+2025-09-21 15:51:16,702 - INFO - Saved successfully
+2025-09-21 15:55:42,486 - INFO - Saving index 11999 through 12099.
+2025-09-21 15:55:42,489 - INFO - Saved successfully
+2025-09-21 16:00:09,883 - INFO - Saving index 12099 through 12199.
+2025-09-21 16:00:09,887 - INFO - Saved successfully
+2025-09-21 16:05:14,658 - INFO - Saving index 12199 through 12299.
+2025-09-21 16:05:14,660 - INFO - Saved successfully
+2025-09-21 16:10:21,969 - INFO - Saving index 12299 through 12399.
+2025-09-21 16:10:21,972 - INFO - Saved successfully
+2025-09-21 16:15:46,925 - INFO - Saving index 12399 through 12499.
+2025-09-21 16:15:46,928 - INFO - Saved successfully
+2025-09-21 16:20:36,798 - INFO - Saving index 12499 through 12599.
+2025-09-21 16:20:36,801 - INFO - Saved successfully
+2025-09-21 16:25:43,104 - INFO - Saving index 12599 through 12699.
+2025-09-21 16:25:43,106 - INFO - Saved successfully
+2025-09-21 16:30:39,544 - INFO - Saving index 12699 through 12799.
+2025-09-21 16:30:39,547 - INFO - Saved successfully
+2025-09-21 16:35:40,545 - INFO - Saving index 12799 through 12899.
+2025-09-21 16:35:40,547 - INFO - Saved successfully
+2025-09-21 16:40:46,574 - INFO - Saving index 12899 through 12999.
+2025-09-21 16:40:46,577 - INFO - Saved successfully
+2025-09-21 16:45:45,292 - INFO - Saving index 12999 through 13099.
+2025-09-21 16:45:45,295 - INFO - Saved successfully
+2025-09-21 16:51:11,246 - INFO - Saving index 13099 through 13199.
+2025-09-21 16:51:11,248 - INFO - Saved successfully
+2025-09-21 16:56:24,396 - INFO - Saving index 13199 through 13299.
+2025-09-21 16:56:24,399 - INFO - Saved successfully
+2025-09-21 17:01:38,985 - INFO - Saving index 13299 through 13399.
+2025-09-21 17:01:38,989 - INFO - Saved successfully
+2025-09-21 17:06:55,066 - INFO - Saving index 13399 through 13499.
+2025-09-21 17:06:55,071 - INFO - Saved successfully
+2025-09-21 17:12:11,611 - INFO - Saving index 13499 through 13599.
+2025-09-21 17:12:11,615 - INFO - Saved successfully
+2025-09-21 17:21:13,816 - INFO - Saving index 13599 through 13699.
+2025-09-21 17:21:13,821 - INFO - Saved successfully
+2025-09-21 17:32:19,167 - INFO - Saving index 13699 through 13799.
+2025-09-21 17:32:19,171 - INFO - Saved successfully
+2025-09-21 17:43:12,320 - INFO - Saving index 13799 through 13899.
+2025-09-21 17:43:12,325 - INFO - Saved successfully
+2025-09-21 17:54:11,582 - INFO - Saving index 13899 through 13999.
+2025-09-21 17:54:11,587 - INFO - Saved successfully
+2025-09-21 17:56:09,821 - ERROR - Unexpected error: HTTPSConnectionPool(host='rest.ensembl.org', port=443): Read timed out. (read timeout=10)
+2025-09-21 17:56:09,821 - INFO - Processed up through index 13999 before error. Start from index 14000 to continue work.

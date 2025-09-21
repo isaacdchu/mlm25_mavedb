@@ -7,6 +7,7 @@ from pathlib import Path
 import logging
 import pickle
 import pandas as pd
+from requests import Timeout
 from utils import get_vep_data
 
 def save_batch(vep_batch: list[dict], save_path: Path) -> None:
@@ -37,7 +38,8 @@ def main(*args) -> None:
         print("Usage: python vep.py <input_csv> <output_pickle> <start_index>")
         sys.exit(1)
 
-    logging.basicConfig(filename=Path("notebooks/logs/vep.log"), level=logging.INFO)
+    logging.basicConfig(filename=Path("notebooks/logs/vep.log"), level=logging.INFO, filemode="a",
+                        format="%(asctime)s - %(levelname)s - %(message)s")
     csv_path: Path = Path(args[0])
     save_path: Path = Path(args[1])
     start_index: int = int(args[2])
@@ -78,6 +80,10 @@ def main(*args) -> None:
     except KeyboardInterrupt:
         print("Process interrupted by user.")
         logging.warning("Process interrupted by user at index %d. Last saved index was %d. Start from index %d to continue work.", i, last_index_save, last_index_save + 1)
+        sys.exit(0)
+    except (Timeout, ConnectionError) as e:
+        logging.warning("Connection error at index %d: %s. Trying again.", i, e)
+        main(csv_path, save_path, str(i))
     except ValueError as e:
         logging.error("Error processing row %d: %s", i, e)
     except Exception as e:
