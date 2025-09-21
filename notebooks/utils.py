@@ -23,6 +23,50 @@ ENSEMBL_API = "https://rest.ensembl.org"
 # Configuration constants
 TIMEOUT = 10  # seconds
 
+# Protein-nucleotide mapping (codons)
+# Note: Each amino acid can be coded by multiple codons; here we list all possible codons
+# Strand 1 (positive strand)
+PROTEIN_TO_NUCLEOTIDES_P1: dict[str, list[str]] = {
+    "Ala": ["GCA", "GCC", "GCG", "GCT"],
+    "Arg": ["AGA", "AGG", "CGA", "CGC", "CGG", "CGT"],
+    "Asn": ["AAC", "AAT"],
+    "Asp": ["GAC", "GAT"],
+    "Cys": ["TGC", "TGT"],
+    "Gln": ["CAA", "CAG"],
+    "Glu": ["GAA", "GAG"],
+    "Gly": ["GGA", "GGC", "GGG", "GGT"],
+    "His": ["CAC", "CAT"],
+    "Ile": ["ATA", "ATC", "ATT"],
+    "Leu": ["CTA", "CTC", "CTG", "CTT", "TTA", "TTG"],
+    "Lys": ["AAA", "AAG"],
+    "Met": ["ATG"],
+    "Phe": ["TTC", "TTT"],
+    "Pro": ["CCA", "CCC", "CCG", "CCT"],
+    "Ser": ["AGC", "AGT", "TCA", "TCC", "TCG", "TCT"],
+    "Thr": ["ACA", "ACC", "ACG", "ACT"],
+    "Trp": ["TGG"],
+    "Tyr": ["TAC", "TAT"],
+    "Val": ["GTA", "GTC", "GTG", "GTT"],
+    "Ter": ["TAA", "TAG", "TGA"]  # Stop codons
+}
+
+# Strand -1 (reverse complement)
+def reverse_complement(dna_seq: str) -> str:
+    """
+    Returns the reverse complement of a DNA sequence.
+    Args:
+        dna_seq (str): Input DNA sequence
+    Returns:
+        str: Reverse complement of the input sequence
+    """
+    complement = str.maketrans("ACGT", "TGCA")
+    return dna_seq.translate(complement)[::-1]
+
+PROTEIN_TO_NUCLEOTIDES_N1: dict[str, list[str]] = {
+    aa: [reverse_complement(codon) for codon in codons]
+    for aa, codons in PROTEIN_TO_NUCLEOTIDES_P1.items()
+}
+
 # Helper functions
 def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     """
@@ -52,6 +96,41 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     ensp_sequence_map[raw_ensp] = sequence
     return sequence
 
+def hamming_distance(s1: str, s2: str) -> int:
+    """
+    Calculate the Hamming distance between two strings.
+    Assumes that the strings are of equal length.
+    Args:
+        s1 (str): First string
+        s2 (str): Second string
+    Returns:
+        int: Hamming distance
+    """
+    return sum(el1 != el2 for el1, el2 in zip(s1, s2))
+
+def find_best_substitution(ref_nucleotides: str, alt_nucleotides_candidates: list[str]) -> str:
+    """
+    Finds the best matching nucleotide substitution from a list of candidates.
+    (Best match is lowest hamming distance, ties broken arbitrarily)
+    Args:
+        ref_nucleotides (str): Reference nucleotide sequence (eg. AAG)
+        alt_nucleotides_candidates (list[str]): List of candidate alternate nucleotide sequences
+    Returns:
+        str: The best matching alternate nucleotide sequence (eg. AAC)
+    """
+    best_candidate: str = ""
+    for candidate in alt_nucleotides_candidates:
+        distance: int = hamming_distance(ref_nucleotides, candidate)
+        if (distance > 0):
+            return candidate
+        else:
+            best_candidate = candidate
+    if (best_candidate != ""):
+        print(f"Warning: No nucleotide change found for {ref_nucleotides}, using {best_candidate} from candidates: {alt_nucleotides_candidates}")
+        return best_candidate
+    raise ValueError(f"No valid nucleotide substitution found for {ref_nucleotides} from candidates: {alt_nucleotides_candidates}")
+    
+
 def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> str:
     """
     Parses strand and alt_long to return a nucleotide sequence.
@@ -63,34 +142,18 @@ def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> s
     """
     # Note: there are multiple codons for each amino acid; we choose one arbitrarily
     # Nucleotide-level differences are insignificant for our purposes
-    # TODO: handle cases where ref_nucleotides == alt_nucleotides
-    # Strand is 1
-    protein_to_codon_p1: dict[str, str] = {
-        "Arg": "CGA", "Ala": "GCA", "Asn": "AAC", "Asp": "GAC",
-        "Cys": "TGC", "Gln": "CAA", "Glu": "GAA", "Gly": "GGA",
-        "His": "CAC", "Ile": "ATA", "Leu": "CTA", "Lys": "AAA",
-        "Met": "ATG", "Phe": "TTC", "Pro": "CCA", "Ser": "TCA",
-        "Thr": "ACA", "Trp": "TGG", "Tyr": "TAC", "Val": "GTA",
-        "Ter": "TAA"  # Stop codon
-    }
-    # Strand is -1
-    protein_to_codon_n1: dict[str, str] = {
-        "Arg": "ACG", "Ala": "TGC", "Asn": "GTT", "Asp": "GTC",
-        "Cys": "GCA", "Gln": "TTG", "Glu": "TTC", "Gly": "TCC",
-        "His": "GTG", "Ile": "TAT", "Leu": "TAG", "Lys": "TTT",
-        "Met": "TAC", "Phe": "GAA", "Pro": "TGG", "Ser": "AGT",
-        "Thr": "TGT", "Trp": "CCA", "Tyr": "GTA", "Val": "CAT",
-        "Ter": "TTA"  # Stop codon
-    }
-    alt_nucleotides: str = ""
+    alt_nucleotides_candidates: list[str] = []
+    
+    # Strand is 1: use normal codons
     if (strand == 1):
-        alt_nucleotides = protein_to_codon_p1.get(alt_long, "")
+        alt_nucleotides_candidates = PROTEIN_TO_NUCLEOTIDES_P1.get(alt_long, [""])
+    # Strand is -1: use reverse complement codons
     elif (strand == -1):
-        alt_nucleotides = protein_to_codon_n1.get(alt_long, "")
+        alt_nucleotides_candidates = PROTEIN_TO_NUCLEOTIDES_N1.get(alt_long, [""])
     else:
         raise ValueError(f"Invalid strand value: {strand}")
-    if (ref_nucleotides == alt_nucleotides):
-        raise ValueError(f"Reference and alternate nucleotides are the same: {ref_nucleotides}")
+
+    alt_nucleotides: str = find_best_substitution(ref_nucleotides, alt_nucleotides_candidates)
     return alt_nucleotides
 
 def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
@@ -111,19 +174,19 @@ def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
     )
     mappings_info: dict[str, Any] = translation_response.json().get("mappings", [{}])[0]
     seq_region_name: str = mappings_info.get("seq_region_name", "")
-    start: int = mappings_info.get("start", 0)
-    end: int = mappings_info.get("end", 0)
     strand: int = mappings_info.get("strand", 0)
+    start: int = mappings_info.get("start", -3)
+    end: int = start + 2
 
     region_response: requests.Response = requests.get(
-        f"{ENSEMBL_API}/info/region/{seq_region_name}",
-        headers={"Content-Type": "text/plain"},
+        f"{ENSEMBL_API}/sequence/region/human/{seq_region_name}:{start}..{end}:{strand}?",
+        headers={"Content-Type": "application/json"},
         timeout=TIMEOUT
     )
-    ref_nucleotides: str = region_response.text.strip()
-
-    nucleotide_change: str = get_nucleotide_change(ref_nucleotides, alt_long, strand)
-    return f"{seq_region_name}:g.{start}_{end}delins{nucleotide_change}"
+    ref_nucleotides: str = region_response.json().get("seq", "")
+    alt_nucleotides: str = get_nucleotide_change(ref_nucleotides, alt_long, strand)
+    print(f"ENSP: {raw_ensp}, Pos: {pos}, Ref: {ref_nucleotides}, Alt: {alt_long}:{alt_nucleotides}, Strand: {strand}")
+    return f"{seq_region_name}:g.{start}_{end}delins{alt_nucleotides}"
 
 def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
     """
@@ -144,8 +207,9 @@ def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
         headers={"Content-Type": "application/json"},
         timeout=TIMEOUT)
     if response.status_code != 200:
-        raise ValueError(f"Error fetching VEP data for {hgvs}: {response.status_code}")
-    return response.json()
+        raise ValueError(f"Error fetching VEP data for {hgvs}: {response.status_code}\n"
+                         f"Response: {response.text}")
+    return response.json()[0]
 
 def dict_to_pickle(dictionary: dict[Any, Any], file_location: os.PathLike) -> None:
     """
