@@ -54,6 +54,7 @@ def main(*args) -> None:
     try:
         vep_batch: list[dict] = []
         while (i < len(df)):
+            print(f"{i}/{len(df)} ", end="")
             vep_batch.append(
                 get_vep_data(
                     df["ensp"].iat[i],
@@ -67,6 +68,7 @@ def main(*args) -> None:
                 last_index_save = i - 1
                 save_batch(vep_batch, save_path)
                 vep_batch.clear()
+            print()
         logging.info("Saving index %d through %d.", last_index_save, i - 1)
         last_index_save = i - 1
         save_batch(vep_batch, save_path)

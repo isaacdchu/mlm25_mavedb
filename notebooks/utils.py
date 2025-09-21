@@ -25,6 +25,7 @@ TIMEOUT = 10  # seconds
 
 # Protein-nucleotide mapping (codons)
 # Note: Each amino acid can be coded by multiple codons; here we list all possible codons
+# TODO: Verify that both the P1 and N1 mappings are correct by hand
 # Strand 1 (positive strand)
 PROTEIN_TO_NUCLEOTIDES_P1: dict[str, list[str]] = {
     "Ala": ["GCA", "GCC", "GCG", "GCT"],
@@ -51,20 +52,28 @@ PROTEIN_TO_NUCLEOTIDES_P1: dict[str, list[str]] = {
 }
 
 # Strand -1 (reverse complement)
-def reverse_complement(dna_seq: str) -> str:
-    """
-    Returns the reverse complement of a DNA sequence.
-    Args:
-        dna_seq (str): Input DNA sequence
-    Returns:
-        str: Reverse complement of the input sequence
-    """
-    complement = str.maketrans("ACGT", "TGCA")
-    return dna_seq.translate(complement)[::-1]
-
 PROTEIN_TO_NUCLEOTIDES_N1: dict[str, list[str]] = {
-    aa: [reverse_complement(codon) for codon in codons]
-    for aa, codons in PROTEIN_TO_NUCLEOTIDES_P1.items()
+    "Ala": ["TGC", "GGC", "CGC", "AGC"],
+    "Arg": ["TCT", "TCC", "GCT", "GGC", "GCT", "ACC"],
+    "Asn": ["GTT", "GTT"],
+    "Asp": ["GTC", "GTC"],
+    "Cys": ["GCA", "GCA"],
+    "Gln": ["TTG", "CTG"],
+    "Glu": ["TTC", "CTC"],
+    "Gly": ["TCC", "GCC", "CCC", "ACC"],
+    "His": ["GTG", "GTG"],
+    "Ile": ["TAT", "GAT", "AAT"],
+    "Leu": ["TAG", "CAG", "CAG", "CAG", "TAA", "CAA"],
+    "Lys": ["TTT", "CTT"],
+    "Met": ["CAT"],
+    "Phe": ["GAA", "GAA"],
+    "Pro": ["TGG", "GGG", "CCG", "AGG"],
+    "Ser": ["TCT", "TCC", "GCT", "GGC", "CCG", "AGC"],
+    "Thr": ["TGA", "GGA", "CGA", "ACA"],
+    "Trp": ["CCA"],
+    "Tyr": ["GTA", "ATA"],
+    "Val": ["CAT", "GTA", "CAC", "AAC"],
+    "Ter": ["TTA", "CTA", "TCA"]  # Stop codons
 }
 
 # Helper functions
@@ -186,7 +195,7 @@ def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
     ref_nucleotides: str = region_response.json().get("seq", "")
     alt_nucleotides: str = get_nucleotide_change(ref_nucleotides, alt_long, strand)
     print(f"ENSP: {raw_ensp}, Pos: {pos}, Ref: {ref_nucleotides}, Alt: {alt_long}:{alt_nucleotides}, Strand: {strand}")
-    return f"{seq_region_name}:g.{start}_{end}delins{alt_nucleotides}"
+    return f"{seq_region_name}:g.{start}..{end}delins{alt_nucleotides}"
 
 def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
     """
