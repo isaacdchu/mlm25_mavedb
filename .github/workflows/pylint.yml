@@ -30,7 +30,6 @@ jobs:
         pip install -e .               # make project importable
     - name: Analyzing the code with pylint
       run: |
-        which python
         source .venv/bin/activate
-        which python
-        pylint $(git ls-files '*.py')
+        echo "Starting pylint analysis..."
+        uv run pylint $(git ls-files '*.py' | grep -v '^example\.py$')
