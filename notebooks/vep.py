@@ -10,6 +10,7 @@ import pickle
 from concurrent.futures import ThreadPoolExecutor, Future
 import pandas as pd
 from requests import Timeout
+from urllib3.exceptions import ConnectTimeoutError
 from utils import get_vep_data
 
 def save_batch(vep_batch: list[dict], save_path: Path) -> None:
@@ -45,9 +46,16 @@ def process_batch(start_index: int, end_index: int, ensp: pd.Series, pos: pd.Ser
                 time.sleep(2)
             futures.append(executor.submit(get_vep_data_threaded, i, ensp.iat[i], pos.iat[i], alt_long.iat[i]))
     sorted_results = sorted([future.result() for future in futures], key=lambda x: x[0])
+    error_occured: bool = False
     for result in sorted_results:
-        vep_batch.append(result[1])
-    return vep_batch
+        if (result[0] < 0):
+            logging.error("Failed to fetch VEP data for index %d", 1-result[0])
+            error_occured = True
+    if not error_occured:
+        for result in sorted_results:
+            vep_batch.append(result[1])
+        return vep_batch
+    raise ValueError("Error occured fetching VEP data. See log for details.")
 
 def get_vep_data_threaded(index: int, ensp: str, pos: int, alt_long: str) -> tuple[int, dict]:
     """
@@ -62,22 +70,25 @@ def get_vep_data_threaded(index: int, ensp: str, pos: int, alt_long: str) -> tup
         index is returned as -1 if there was an error fetching the data
         index is returned as -2 if there was timeout or connection error
     """
-    retries_left: int = 5
+    retries_left: int = 10
+    error_msg: str = ""
     while retries_left > 0:
         try:
             vep_data: dict = get_vep_data(ensp, pos, alt_long)
-            if (retries_left < 5):
-                logging.info("Successfully fetched VEP data for index %d after retrying", index)
+            if (retries_left < 10):
+                logging.info("Successfully fetched VEP data for index %d after retrying %d times", index, 10 - retries_left)
             return (index, vep_data)
-        except (Timeout, ConnectionError) as e:
-            logging.error("Connection error fetching VEP data for index %d: %s", index, e)
+        except (Timeout, ConnectionError, ConnectTimeoutError) as e:
+            logging.warning("Connection error fetching VEP data for index %d: %s", index, e)
             retries_left -= 1
-            if retries_left == 0:
+            if retries_left <= 0:
                 break
+            time.sleep(2)
+            error_msg = str(e)
         except Exception as e:
             logging.error("Error fetching VEP data for index %d: %s", index, e)
-            return (-1, {})
-    return (-2, {})
+            error_msg = str(e)
+    return (-index-1, {"error": error_msg})
 
 def main(*args) -> None:
     """
