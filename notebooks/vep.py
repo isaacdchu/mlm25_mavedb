@@ -119,16 +119,16 @@ def main(*args) -> None:
     )
 
     i: int = start_index
-    last_index_save: int = 0
+    last_index_save: int = start_index
     try:
         vep_batch: list[dict] = []
         while (i < len(df)):
             end_index = min(i + 100, len(df)) # this index is exclusive
-            logging.info("Processing batch: %d-%d/%d", i, end_index, len(df))
+            logging.info("Processing batch: %d-%d/%d", i, end_index - 1, len(df))
             vep_batch = process_batch(i, end_index, df["ensp"], df["pos"], df["alt_long"])
             i += 100
             logging.info("Saving index %d through %d.", last_index_save, end_index - 1)
-            last_index_save = i - 1
+            last_index_save = i
             save_batch(vep_batch, save_path)
             vep_batch.clear()
             print()
