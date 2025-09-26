@@ -100,7 +100,7 @@ token: str | None = os.environ.get("ESM_API_KEY", None)
 if token is None:
     raise ValueError("ESM_API_KEY environment variable not set")
 esm_model: ESM3InferenceClient = client(
-    model="esmc-600m-2024-12",
+    model="esmc-6b-2024-12",
     url="https://forge.evolutionaryscale.ai",
     token=token,
 )

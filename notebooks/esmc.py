@@ -2,12 +2,12 @@
 Helper script for getting all ESM C embeddings for a given dataaset
 """
 import sys
-import pandas as pd
 import logging
 from pathlib import Path
+import pickle
+import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, Future
 from torch import Tensor
-import pickle
 import utils
 
 def save_batch(embeddings: dict[int, Tensor], save_path: Path) -> None:
@@ -35,6 +35,7 @@ def main(*argv) -> None:
     start_index: int = int(argv[2])
     logging.info("CLAs: %s %s %d", csv_path, save_path, start_index)
 
+    
     df: pd.DataFrame = pd.read_csv(csv_path, usecols=["ensp", "pos", "ref_short", "alt_short"])
     
 
