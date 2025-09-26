@@ -35,7 +35,8 @@ def main(*argv) -> None:
     start_index: int = int(argv[2])
     logging.info("CLAs: %s %s %d", csv_path, save_path, start_index)
 
-    
+    ensp_sequence_map: dict[str, str] = utils.pickle_to_dict(utils.ENSP_SEQUENCE_MAP_PATH)
+    ensp_embeddings_map: dict[str, Tensor] = utils.pickle_to_dict(utils.ENSP_EMBEDDINGS_MAP_PATH)
     df: pd.DataFrame = pd.read_csv(csv_path, usecols=["ensp", "pos", "ref_short", "alt_short"])
     
 

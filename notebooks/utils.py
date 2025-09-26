@@ -25,11 +25,10 @@ RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
 RAW_TEST_PATH: os.PathLike = Path("../data/test/raw_test.csv")
 PROCESSED_TEST_PATH: os.PathLike = Path("../data/test/processed_test.csv")
 PROCESSED_TRAIN_PATH: os.PathLike = Path("../data/train/processed_train.csv")
-TRAIN_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_sequence_map.pkl")
-TEST_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/test/test_ensp_sequence_map.pkl")
+ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/ensp_sequence_map.pkl")
 TRAIN_VEP_DATA_PATH: os.PathLike = Path("../data/train/train_vep.pkl")
 
-TRAIN_ENSP_EMBEDDINGS_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_embeddings_map.pkl")
+ENSP_EMBEDDINGS_MAP_PATH: os.PathLike = Path("../data/ensp_embeddings_map.pkl")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
