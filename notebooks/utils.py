@@ -8,6 +8,18 @@ import pickle
 from typing import Any
 import requests
 
+from dotenv import load_dotenv
+from esm.sdk.api import (
+    ESM3InferenceClient,
+    ESMProtein,
+    ESMProteinTensor,
+    LogitsConfig,
+    LogitsOutput,
+)
+from esm.sdk import client
+from torch import Tensor
+import torch
+
 # All file paths
 RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
 RAW_TEST_PATH: os.PathLike = Path("../data/test/raw_test.csv")
@@ -16,6 +28,8 @@ PROCESSED_TRAIN_PATH: os.PathLike = Path("../data/train/processed_train.csv")
 TRAIN_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_sequence_map.pkl")
 TEST_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/test/test_ensp_sequence_map.pkl")
 TRAIN_VEP_DATA_PATH: os.PathLike = Path("../data/train/train_vep.pkl")
+
+TRAIN_ENSP_EMBEDDINGS_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_embeddings_map.pkl")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
@@ -26,7 +40,6 @@ TIMEOUT = 10  # seconds
 
 # Protein-nucleotide mapping (codons)
 # Note: Each amino acid can be coded by multiple codons; here we list all possible codons
-# TODO: Verify that both the P1 and N1 mappings are correct by hand
 # Strand 1 (positive strand)
 PROTEIN_TO_NUCLEOTIDES_P1: dict[str, list[str]] = {
     "Ala": ["GCA", "GCC", "GCG", "GCT"],
@@ -77,7 +90,24 @@ PROTEIN_TO_NUCLEOTIDES_N1: dict[str, list[str]] = {
     "Ter": ["TTA", "CTA", "TCA"]  # Stop codons
 }
 
+# ESM C Model
+N_KMEANS_CLUSTERS: int = 3
+EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
+    sequence=True, return_embeddings=True
+)
+load_dotenv()  # take environment variables from .env file
+token: str | None = os.environ.get("ESM_API_KEY", None)
+if token is None:
+    raise ValueError("ESM_API_KEY environment variable not set")
+esm_model: ESM3InferenceClient = client(
+    model="esmc-600m-2024-12",
+    url="https://forge.evolutionaryscale.ai",
+    token=token,
+)
+del token
+
 # Helper functions
+# Full sequence
 def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     """
     Fetch the full protein sequence from Ensembl given an Ensembl Protein ID.
@@ -106,6 +136,22 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     ensp_sequence_map[raw_ensp] = sequence
     return sequence
 
+def sequence_substitution(sequence: str, pos: int, alt_short: str) -> str:
+    """
+    Substitute the amino acid at the given position in the sequence with the alternate amino acid.
+    Assumes valid inputs.
+    Args:
+        sequence (str): Original amino acid sequence
+        pos (int): Position to substitute (1-indexed)
+        alt_short (str): Alternate amino acid (single-letter code)
+    Returns:
+        str: Modified amino acid sequence
+    """
+    if (alt_short == "*"):  # Stop codon
+        return sequence[:pos-1]  # Truncate sequence at position
+    return sequence[:pos-1] + alt_short + sequence[pos:]
+
+# VEP data
 def hamming_distance(s1: str, s2: str) -> int:
     """
     Calculate the Hamming distance between two strings.
@@ -174,7 +220,7 @@ def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
         pos (int): Position of the variant
         alt_long (str): Alternate amino acid (eg Leu for L/Leucine)
     Returns:
-        str: HGVS notation (e.g., "ENSP00000354587.3:p.Pro175Leu")
+        str: HGVS notation (e.g., "X:g.15594962..15594964delinsTTA")
     """
     ensp: str = raw_ensp.split(".")[0]  # Remove version number if present
     translation_response: requests.Response = requests.get(
@@ -221,6 +267,49 @@ def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
                          f"Response: {response.text}")
     return response.json()[0]
 
+# ESM C embedding utilities
+def get_embedding(sequence: str) -> Tensor:
+    """
+    Get the ESM C embedding for a given protein sequence.
+    Args:
+        sequence (str): Protein sequence
+    Returns:
+        Tensor: The output embeddings tensor
+    Raises:
+        ValueError: If the embeddings are not found in the logits output
+    """
+    # Handle sequences longer than 2048 by splitting into chunks
+    if len(sequence) > 2046:
+        # Take average of 2 embeddings of chunks
+        protein_1: ESMProtein = ESMProtein(sequence=str(sequence[:2046]))
+        protein_2: ESMProtein = ESMProtein(sequence=str(sequence[-2046:]))
+        protein_tensor_1: ESMProteinTensor = esm_model.encode(protein_1)
+        protein_tensor_2: ESMProteinTensor = esm_model.encode(protein_2)
+        logits_1: LogitsOutput = esm_model.logits(protein_tensor_1, EMBEDDING_CONFIG)
+        logits_2: LogitsOutput = esm_model.logits(protein_tensor_2, EMBEDDING_CONFIG)
+        output_1: Tensor | None = logits_1.embeddings
+        output_2: Tensor | None = logits_2.embeddings
+        if output_1 is None or output_2 is None:
+            raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
+        output_1 = output_1[0][1:-1]  # Remove start/end tokens
+        output_2 = output_2[0][1:-1]  # Remove start/end tokens
+        # Overlap the proteins on their intersection
+        overlap_amount: int = 2 * 2046 - len(sequence)
+        overlap: Tensor = (output_1[-overlap_amount:] + output_2[:overlap_amount]) / 2
+        # Concatenate the non-overlapping parts with the averaged overlap
+        joint_output: Tensor = torch.cat((output_1[:-overlap_amount], overlap, output_2[overlap_amount:]), dim=0)
+        return joint_output
+
+    # Sequence is within limit
+    protein: ESMProtein = ESMProtein(sequence=str(sequence))
+    protein_tensor: ESMProteinTensor = esm_model.encode(protein)
+    logits: LogitsOutput = esm_model.logits(protein_tensor, EMBEDDING_CONFIG)
+    output: Tensor | None = logits.embeddings
+    if output is None:
+        raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
+    # Return the first (and only) element in the batch and remove start/end tokens
+    return output[0][1:-1]  
+
 def dict_to_pickle(dictionary: dict[Any, Any], file_location: os.PathLike) -> None:
     """
     Turns a dictionary into a pickle
@@ -261,3 +350,27 @@ def vep_from_pickle(vep_data_path: os.PathLike) -> list[dict]:
             except EOFError:
                 break
     return vep_data
+
+def save_embeddings(embeddings: list[LogitsOutput], path: os.PathLike) -> None:
+    """
+    Save a list of LogitsOutput embeddings to a pickle file.
+    Args:
+        embeddings (list[LogitsOutput]): List of LogitsOutput objects to save
+        path (os.PathLike): Path to the output pickle file
+    Returns:
+        None
+    """
+    with open(path, "wb") as f:
+        pickle.dump(embeddings, f)
+
+def load_embeddings(path: os.PathLike) -> list[LogitsOutput]:
+    """
+    Load a list of LogitsOutput embeddings from a pickle file.
+    Args:
+        path (os.PathLike): Path to the input pickle file
+    Returns:
+        list[LogitsOutput]: List of LogitsOutput objects loaded from the file
+    """
+    with open(path, "rb") as f:
+        embeddings: list[LogitsOutput] = pickle.load(f)
+    return embeddings

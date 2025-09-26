@@ -178,7 +178,11 @@ def main() -> None:
     # now we have a list of tensors of [num_layers, hidden_size]
     print("embedding shape [num_layers, hidden_size]:", all_mean_embeddings[0].shape)
     plot_embeddings_at_layer(all_mean_embeddings, layer_idx=30, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=12, df=df)
+    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=25, df=df)
+    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=20, df=df)
+    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=15, df=df)
+    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=10, df=df)
+    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=5, df=df)
     plot_embeddings_at_layer(all_mean_embeddings, layer_idx=0, df=df)
     plt.show()
 
