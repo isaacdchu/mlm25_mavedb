@@ -12,10 +12,8 @@ from esm.models.esmc import ESMC
 from esm.sdk.api import (
     ESMProtein,
     ESMProteinTensor,
-    ESMProteinError,
     LogitsConfig,
     LogitsOutput,
-    ProteinType,
 )
 from torch import Tensor
 import torch
@@ -96,7 +94,7 @@ EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
 )
 DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL_TYPE: str = "esmc_600m"
-esm_model: ESMC = ESMC.from_pretrained(MODEL_TYPE).to(DEVICE) # cuda or cpu
+ESM_MODEL: ESMC = ESMC.from_pretrained(MODEL_TYPE).to(DEVICE) # cuda or cpu
 
 # Helper functions
 # Full sequence
@@ -266,7 +264,7 @@ def get_embedding(sequence: str) -> Tensor:
     Args:
         sequence (str): Protein sequence
     Returns:
-        Tensor: The output embeddings tensor
+        Tensor: The output embeddings tensor of shape (sequence_length, 1152)
     Raises:
         ValueError: If the embeddings are not found in the logits output
     """
@@ -275,10 +273,10 @@ def get_embedding(sequence: str) -> Tensor:
         # Take average of 2 embeddings of chunks
         protein_1: ESMProtein = ESMProtein(sequence=str(sequence[:2046]))
         protein_2: ESMProtein = ESMProtein(sequence=str(sequence[-2046:]))
-        protein_tensor_1: ESMProteinTensor = esm_model.encode(protein_1)
-        protein_tensor_2: ESMProteinTensor = esm_model.encode(protein_2)
-        logits_1: LogitsOutput = esm_model.logits(protein_tensor_1, EMBEDDING_CONFIG)
-        logits_2: LogitsOutput = esm_model.logits(protein_tensor_2, EMBEDDING_CONFIG)
+        protein_tensor_1: ESMProteinTensor = ESM_MODEL.encode(protein_1)
+        protein_tensor_2: ESMProteinTensor = ESM_MODEL.encode(protein_2)
+        logits_1: LogitsOutput = ESM_MODEL.logits(protein_tensor_1, EMBEDDING_CONFIG)
+        logits_2: LogitsOutput = ESM_MODEL.logits(protein_tensor_2, EMBEDDING_CONFIG)
         output_1: Tensor | None = logits_1.embeddings
         output_2: Tensor | None = logits_2.embeddings
         if output_1 is None or output_2 is None:
@@ -294,13 +292,13 @@ def get_embedding(sequence: str) -> Tensor:
 
     # Sequence is within limit
     protein: ESMProtein = ESMProtein(sequence=str(sequence))
-    protein_tensor: ESMProteinTensor = esm_model.encode(protein)
-    logits: LogitsOutput = esm_model.logits(protein_tensor, EMBEDDING_CONFIG)
+    protein_tensor: ESMProteinTensor = ESM_MODEL.encode(protein)
+    logits: LogitsOutput = ESM_MODEL.logits(protein_tensor, EMBEDDING_CONFIG)
     output: Tensor | None = logits.embeddings
     if output is None:
         raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
     # Return the first (and only) element in the batch and remove start/end tokens
-    return output[0][1:-1]  
+    return output[0][1:-1]
 
 def dict_to_pickle(dictionary: dict[Any, Any], file_location: os.PathLike) -> None:
     """

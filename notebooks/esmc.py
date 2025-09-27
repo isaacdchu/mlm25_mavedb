@@ -5,9 +5,8 @@ import sys
 import logging
 from pathlib import Path
 import pickle
-import time
-import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, Future
+import pandas as pd
 from torch import Tensor
 import utils
 
@@ -28,7 +27,7 @@ def save_batch(embeddings: list[Tensor], save_path: Path) -> None:
 
 def get_embedding_threaded(index: int, ensp: str, pos: int, alt_short: str) -> tuple[int, Tensor]:
     """
-    Fetch the ESM C embedding for a given protein variant in a thread and return the result with its index.
+    Calculate ESM C embedding for a given protein variant in a thread and return the result with its index.
 
     Args:
         index (int): The index of the data in the original DataFrame.
@@ -47,11 +46,10 @@ def get_embedding_threaded(index: int, ensp: str, pos: int, alt_short: str) -> t
                 logging.error("Ensp %s not found in sequence map", ensp)
                 return (-1 * (index + 1), Tensor())
             sequence: str = utils.sequence_substitution(ensp_sequence_map[ensp], pos, alt_short)
-            embedding: Tensor = utils.get_embedding(sequence)
+            embedding: Tensor = utils.get_embedding(sequence).mean(dim=0)
             if (embedding.numel() == 0):
                 logging.error("Empty embedding for index %d", index)
                 retries_left -= 1
-                time.sleep(2)
                 continue
             if (retries_left < 5):
                 logging.info("Successfully fetched embedding for index %d after %d retries", index, 5-retries_left)
@@ -59,7 +57,6 @@ def get_embedding_threaded(index: int, ensp: str, pos: int, alt_short: str) -> t
         except Exception as e:
             logging.error("Error fetching embedding for index %d: %s", index, str(e))
             retries_left -= 1
-            time.sleep(2)
     # If we exhaust retries, return an error indicator
     logging.error("Exhausted retries for index %d", index)
     return (-1 * (index + 1), Tensor())
@@ -82,8 +79,6 @@ def process_batch(start_index: int, end_index: int, ensp: pd.Series, pos: pd.Ser
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures: list[Future] = []
         for i in range(start_index, end_index):
-            if (i % 5 == 4):
-                time.sleep(2)
             futures.append(executor.submit(get_embedding_threaded, i, ensp.iat[i], pos.iat[i], alt_short.iat[i]))
     sorted_results = sorted([future.result() for future in futures], key=lambda x: x[0])
     error_occured: bool = False
@@ -110,6 +105,7 @@ def main(*argv) -> None:
     save_path: Path = Path(argv[1])
     start_index: int = int(argv[2])
     logging.info("CLAs: %s %s %d", csv_path, save_path, start_index)
+    logging.info("Using model: %s on device: %s", utils.MODEL_TYPE, utils.DEVICE)
 
     df: pd.DataFrame = pd.read_csv(csv_path, usecols=["ensp", "pos", "alt_short"])
 
@@ -126,7 +122,6 @@ def main(*argv) -> None:
             last_index_save = i
             save_batch(embeddings_batch, save_path)
             embeddings_batch.clear()
-            print()
     except KeyboardInterrupt:
         logging.warning("Process interrupted by user at index %d. Last saved index was %d. Start from index %d to continue work.", i, last_index_save, last_index_save + 1)
         sys.exit(0)
