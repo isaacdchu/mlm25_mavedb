@@ -86,35 +86,32 @@ def get_rand_indices(all_embeddings: list[torch.Tensor], df: pd.DataFrame) -> li
     return rand_indices
 
 def plot_embeddings(
-    all_embeddings: list[torch.Tensor],
+    all_mean_embeddings: list[torch.Tensor],
     df: pd.DataFrame
 ) -> None:
     """
     Plot the embeddings
     """
-
-    # project all the embeddings to 2D using PCA
-    mean_embeddings = torch.stack([embedding.mean(dim=0) for embedding in all_embeddings])
+    # Each embedding is of shape [1152]
+    # Project each sequence's embedding to 2D using PCA
+    # Color each point by its lid_type
     pca = PCA(n_components=2)
-    pca.fit(mean_embeddings.numpy())
-    projected_mean_embeddings = pca.transform(mean_embeddings.numpy())
-
-    # compute kmeans purity as a measure of how good the clustering is
-    kmeans = KMeans(n_clusters=N_KMEANS_CLUSTERS, random_state=0).fit(
-        projected_mean_embeddings
-    )
-    rand_index = adjusted_rand_score(df["lid_type"], kmeans.labels_)
-
-    # plot the clusters
-    plt.figure(figsize=(4, 4))
+    all_mean_embeddings_stack = torch.stack(all_mean_embeddings).numpy()
+    projected_embeddings = pca.fit_transform(all_mean_embeddings_stack)
+    plt.figure(figsize=(10, 8))
     sns.scatterplot(
-        x=projected_mean_embeddings[:, 0],
-        y=projected_mean_embeddings[:, 1],
+        x=projected_embeddings[:, 0],
+        y=projected_embeddings[:, 1],
         hue=df["lid_type"],
+        palette="Set1",
+        s=100,
     )
-    plt.title(f"PCA of Mean Embeddings (Rand Index: {rand_index:.2f})")
-    plt.xlabel("PC 1")
-    plt.ylabel("PC 2")
+    plt.title("PCA of Protein Embeddings Colored by Lid Type")
+    plt.xlabel("PCA Component 1")
+    plt.ylabel("PCA Component 2")
+    plt.legend(title="Lid Type")
+    plt.grid(True)
+    plt.tight_layout()
 
 def get_model(model_type: str, device: str) -> ESMC:
     """
@@ -160,9 +157,9 @@ def main() -> None:
             print(f"Error: embeddings of {output} \
                   is not a tensor: {type(output.embeddings)}")
             continue
-        all_embeddings.append(output.embeddings[0])
+        all_embeddings.append(output.embeddings[0].mean(dim=0))
 
-    print("embedding shape [num_layers, hidden_size]:", all_embeddings[0].shape)
+    print("embedding shape:", all_embeddings[0].shape)
     plot_embeddings(all_embeddings, df)
     plt.show()
 
