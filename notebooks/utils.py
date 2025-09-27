@@ -90,7 +90,7 @@ PROTEIN_TO_NUCLEOTIDES_N1: dict[str, list[str]] = {
 # ESM C Model
 N_KMEANS_CLUSTERS: int = 3
 EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
-    sequence=True, return_embeddings=True
+    sequence=True, return_embeddings=True, return_hidden_states=True
 )
 DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL_TYPE: str = "esmc_600m"
@@ -271,8 +271,8 @@ def get_embedding(sequence: str) -> Tensor:
     # Handle sequences longer than 2048 by splitting into chunks
     if len(sequence) > 2046:
         # Take average of 2 embeddings of chunks
-        protein_1: ESMProtein = ESMProtein(sequence=str(sequence[:2046]))
-        protein_2: ESMProtein = ESMProtein(sequence=str(sequence[-2046:]))
+        protein_1: ESMProtein = ESMProtein(sequence=sequence[:2046])
+        protein_2: ESMProtein = ESMProtein(sequence=sequence[-2046:])
         protein_tensor_1: ESMProteinTensor = ESM_MODEL.encode(protein_1)
         protein_tensor_2: ESMProteinTensor = ESM_MODEL.encode(protein_2)
         logits_1: LogitsOutput = ESM_MODEL.logits(protein_tensor_1, EMBEDDING_CONFIG)
@@ -281,24 +281,28 @@ def get_embedding(sequence: str) -> Tensor:
         output_2: Tensor | None = logits_2.embeddings
         if output_1 is None or output_2 is None:
             raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
-        output_1 = output_1[0][1:-1]  # Remove start/end tokens
-        output_2 = output_2[0][1:-1]  # Remove start/end tokens
+        output_1 = output_1.squeeze(0)[1:-1]  # Remove start/end tokens
+        output_2 = output_2.squeeze(0)[1:-1]  # Remove start/end tokens
         # Overlap the proteins on their intersection
         overlap_amount: int = 2 * 2046 - len(sequence)
-        overlap: Tensor = (output_1[-overlap_amount:] + output_2[:overlap_amount]) / 2
+        # Get overlapping slices
+        overlap_1 = output_1[-overlap_amount:]
+        overlap_2 = output_2[:overlap_amount]
+        # Average the overlapping area
+        overlap = torch.mean(torch.stack([overlap_1, overlap_2]), dim=0)
         # Concatenate the non-overlapping parts with the averaged overlap
         joint_output: Tensor = torch.cat((output_1[:-overlap_amount], overlap, output_2[overlap_amount:]), dim=0)
-        return joint_output
+        return joint_output.mean(dim=0)  # Mean over sequence length
 
     # Sequence is within limit
-    protein: ESMProtein = ESMProtein(sequence=str(sequence))
+    protein: ESMProtein = ESMProtein(sequence=sequence)
     protein_tensor: ESMProteinTensor = ESM_MODEL.encode(protein)
     logits: LogitsOutput = ESM_MODEL.logits(protein_tensor, EMBEDDING_CONFIG)
     output: Tensor | None = logits.embeddings
     if output is None:
         raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
     # Return the first (and only) element in the batch and remove start/end tokens
-    return output[0][1:-1]
+    return output.squeeze(0)[1:-1].mean(dim=0)  # Mean over sequence length
 
 def dict_to_pickle(dictionary: dict[Any, Any], file_location: os.PathLike) -> None:
     """
