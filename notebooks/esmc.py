@@ -46,7 +46,7 @@ def get_embedding_threaded(index: int, ensp: str, pos: int, alt_short: str) -> t
                 logging.error("Ensp %s not found in sequence map", ensp)
                 return (-1 * (index + 1), Tensor())
             sequence: str = utils.sequence_substitution(ensp_sequence_map[ensp], pos, alt_short)
-            embedding: Tensor = utils.get_embedding(sequence).mean(dim=0)
+            embedding: Tensor = utils.get_embedding(sequence)
             if (embedding.numel() == 0):
                 logging.error("Empty embedding for index %d", index)
                 retries_left -= 1
@@ -119,7 +119,7 @@ def main(*argv) -> None:
             embeddings_batch = process_batch(i, end_index, df["ensp"], df["pos"], df["alt_short"])
             i += 100
             logging.info("Saving index %d through %d.", last_index_save, end_index - 1)
-            last_index_save = i
+            last_index_save = i - 1
             save_batch(embeddings_batch, save_path)
             embeddings_batch.clear()
     except KeyboardInterrupt:
