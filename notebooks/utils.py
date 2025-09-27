@@ -8,15 +8,15 @@ import pickle
 from typing import Any
 import requests
 
-from dotenv import load_dotenv
+from esm.models.esmc import ESMC
 from esm.sdk.api import (
-    ESM3InferenceClient,
     ESMProtein,
     ESMProteinTensor,
+    ESMProteinError,
     LogitsConfig,
     LogitsOutput,
+    ProteinType,
 )
-from esm.sdk import client
 from torch import Tensor
 import torch
 
@@ -94,16 +94,9 @@ N_KMEANS_CLUSTERS: int = 3
 EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
     sequence=True, return_embeddings=True
 )
-load_dotenv()  # take environment variables from .env file
-token: str | None = os.environ.get("ESM_API_KEY", None)
-if token is None:
-    raise ValueError("ESM_API_KEY environment variable not set")
-esm_model: ESM3InferenceClient = client(
-    model="esmc-6b-2024-12",
-    url="https://forge.evolutionaryscale.ai",
-    token=token,
-)
-del token
+DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
+MODEL_TYPE: str = "esmc_600m"
+esm_model: ESMC = ESMC.from_pretrained(MODEL_TYPE).to(DEVICE) # cuda or cpu
 
 # Helper functions
 # Full sequence

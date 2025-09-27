@@ -6,20 +6,17 @@ https://github.com/evolutionaryscale/esm/blob/main/cookbook/tutorials/2_embed.ip
 "ask.csv" taken from https://www.biorxiv.org/content/10.1101/2024.10.23.619915v1
 '''
 
-import os
-from concurrent.futures import ThreadPoolExecutor, CancelledError
 from typing import Sequence
 
-from dotenv import load_dotenv
+from esm.models.esmc import ESMC
 from esm.sdk.api import (
-    ESM3InferenceClient,
     ESMProtein,
+    ESMProteinTensor,
     ESMProteinError,
     LogitsConfig,
     LogitsOutput,
     ProteinType,
 )
-from esm.sdk import client
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -30,69 +27,77 @@ from sklearn.metrics import adjusted_rand_score
 
 N_KMEANS_CLUSTERS: int = 3
 EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
-    sequence=True, return_embeddings=True, return_hidden_states=True
+    sequence=True, return_embeddings=True
 )
 
-def embed_sequence(model: ESM3InferenceClient, sequence: ProteinType) -> LogitsOutput:
-    """
-    Embed a single protein sequence using the provided ESM model.
-    Args:
-        model (ESM3InferenceClient): An instantiated ESM Forge client
-        sequence (ProteinType): A protein sequence string or ESMProtein object
-    Returns:
-        LogitsOutput: The output containing logits and embeddings
-    """
-    protein = ESMProtein(sequence=str(sequence))
-    protein_tensor = model.encode(protein)
-    output = model.logits(protein_tensor, EMBEDDING_CONFIG)
-    return output
-
-
 def batch_embed(
-    model: ESM3InferenceClient,
-    inputs: Sequence[ProteinType]
+    model: ESMC,
+    inputs: Sequence[ProteinType],
+    df: pd.DataFrame
 ) -> Sequence[LogitsOutput]:
     """
     Forge supports auto-batching. So batch_embed() is as simple as running a collection
     of embed calls in parallel using asyncio.
     Args:
-        model (ESM3InferenceClient): An instantiated ESM Forge client
+        model (ESMC): A pretrained ESM C model
         inputs (Sequence[ProteinType]): A sequence of protein sequences or ESMProtein objects
     Returns:
         Sequence[LogitsOutput]: A sequence of outputs containing logits and embeddings
     """
-    with ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(embed_sequence, model, protein) for protein in inputs
-        ]
-        results = []
-        for future in futures:
-            try:
-                results.append(future.result())
-            except (CancelledError, TimeoutError) as e:
-                results.append(ESMProteinError(500, str(e)))
+    results: list[LogitsOutput] = []
+    row_num: int = 0
+    for protein_sequence in inputs:
+        protein: ESMProtein = ESMProtein(sequence=str(protein_sequence))
+        protein_tensor: ESMProteinTensor = model.encode(protein)
+        try:
+            output = model.logits(protein_tensor, EMBEDDING_CONFIG)
+            results.append(output)
+        except Exception as e:
+            print(f"Error embedding sequence: {e}")
+            # Remove the corresponding row from df
+            df.drop(index=row_num, inplace=True)
+        finally:
+            row_num += 1
     return results
 
-def plot_embeddings_at_layer(
-    all_mean_embeddings: list[torch.Tensor],
-    layer_idx: int,
+def get_rand_indices(all_embeddings: list[torch.Tensor], df: pd.DataFrame) -> list[float]:
+    """
+    Compute the Rand indices for clustering at each layer of the model.
+    Args:
+        all_embeddings (list[torch.Tensor]): List of embeddings for each sequence
+        df (pd.DataFrame): DataFrame containing metadata for coloring the plot
+    Returns:
+        list[float]: List of Rand indices for each layer
+    """
+    mean_embeddings = torch.stack([embedding.mean(dim=0) for embedding in all_embeddings])
+    rand_indices: list[float] = []
+    # mean_embeddings: [num_samples, num_layers, hidden_size]
+    # We want to compute clustering for each layer across samples
+    num_layers = mean_embeddings.shape[1]
+    for layer in range(num_layers):
+        layer_embeddings = mean_embeddings[:, layer].numpy().reshape(-1, 1)
+        pca = PCA(n_components=1)
+        projected_layer_embeddings = pca.fit_transform(layer_embeddings)
+        kmeans = KMeans(n_clusters=N_KMEANS_CLUSTERS, random_state=0).fit(
+            projected_layer_embeddings
+        )
+        rand_index = adjusted_rand_score(df["lid_type"], kmeans.labels_)
+        rand_indices.append(rand_index)
+    return rand_indices
+
+def plot_embeddings(
+    all_embeddings: list[torch.Tensor],
     df: pd.DataFrame
 ) -> None:
     """
-    Plot the mean embeddings at a specific layer using PCA and KMeans clustering.
-    Args:
-        all_mean_embeddings (list[torch.Tensor]): List of mean embeddings for each sequence
-        layer_idx (int): The layer index to visualize
-        df (pd.DataFrame): DataFrame containing metadata for coloring the plot
+    Plot the embeddings
     """
-    stacked_mean_embeddings = torch.stack(
-        [embedding[layer_idx, :] for embedding in all_mean_embeddings]
-    ).to(torch.float32).numpy()
 
     # project all the embeddings to 2D using PCA
+    mean_embeddings = torch.stack([embedding.mean(dim=0) for embedding in all_embeddings])
     pca = PCA(n_components=2)
-    pca.fit(stacked_mean_embeddings)
-    projected_mean_embeddings = pca.transform(stacked_mean_embeddings)
+    pca.fit(mean_embeddings.numpy())
+    projected_mean_embeddings = pca.transform(mean_embeddings.numpy())
 
     # compute kmeans purity as a measure of how good the clustering is
     kmeans = KMeans(n_clusters=N_KMEANS_CLUSTERS, random_state=0).fit(
@@ -107,34 +112,20 @@ def plot_embeddings_at_layer(
         y=projected_mean_embeddings[:, 1],
         hue=df["lid_type"],
     )
-    plt.title(
-        f"PCA of mean embeddings at layer {layer_idx}.\nRand index: {rand_index:.2f}"
-    )
+    plt.title(f"PCA of Mean Embeddings (Rand Index: {rand_index:.2f})")
     plt.xlabel("PC 1")
     plt.ylabel("PC 2")
 
-def get_model(model_type: str) -> ESM3InferenceClient:
+def get_model(model_type: str, device: str) -> ESMC:
     """
-    Initialize and return an ESM3InferenceClient model using the provided model type.
-    Requires the ESM_API_KEY environment variable to be set.
+    Initialize and return a pretrained ESM C model.
     Args:
-        model_type (str): The type of ESM model to use (e.g., "esmc-300m-2024-12")
+        model_type (str): The type of ESM model to use (e.g., "esmc_600m")
     Returns:
-        ESM3InferenceClient: An instantiated ESM Forge client
-    Raises:
-        ValueError: If the ESM_API_KEY environment variable is not set
+        ESMC: An instantiated pretrained ESM C model
     """
-    load_dotenv()  # take environment variables from .env file
-    token: str | None = os.environ.get("ESM_API_KEY", None)
-    if token is None:
-        raise ValueError("ESM_API_KEY environment variable not set")
-    model: ESM3InferenceClient = client(
-        model=model_type,
-        url="https://forge.evolutionaryscale.ai",
-        token=token,
-    )
-    del token
-    return model
+    client: ESMC = ESMC.from_pretrained(model_type).to(device) # cuda or cpu
+    return client
 
 def main() -> None:
     """
@@ -147,43 +138,32 @@ def main() -> None:
     6. Visualize the embeddings at specified layers using PCA and KMeans clustering.
     """
     # Initialize the model and data
-    model: ESM3InferenceClient = get_model("esmc-600m-2024-12")
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")
+    model: ESMC = get_model("esmc_600m", device)
     adk_path = "adk.csv"
     df = pd.read_csv(adk_path)
     df = df[["org_name", "sequence", "lid_type", "temperature"]]
     df = df[df["lid_type"] != "other"]  # drop one structural class for simplicity
 
     # You may see some error messages due to rate limits on each Forge account,
-    # but this will retry until the embedding job is complete
+    # but this will retry until the embedding job is completed.
     # This may take a few minutes to run
-    outputs: Sequence[LogitsOutput] = batch_embed(model, df["sequence"].tolist())
-    all_hidden_states: list[torch.Tensor] = []
+    outputs: Sequence[LogitsOutput] = batch_embed(model, df["sequence"].tolist(), df)
+    all_embeddings: list[torch.Tensor] = []
     for output in outputs:
         if isinstance(output, ESMProteinError):
             print(f"Error embedding sequence: {output}")
             print(f"{output}")
             continue
-        if not isinstance(output.hidden_states, torch.Tensor):
-            print(f"Error: hidden_states of {output} \
-                  is not a tensor: {type(output.hidden_states)}")
+        if not isinstance(output.embeddings, torch.Tensor):
+            print(f"Error: embeddings of {output} \
+                  is not a tensor: {type(output.embeddings)}")
             continue
-        all_hidden_states.append(output.hidden_states)
+        all_embeddings.append(output.embeddings[0])
 
-    # we'll summarize the embeddings using their mean across the sequence dimension
-    # which allows us to compare embeddings for sequences of different lengths
-    all_mean_embeddings: list[torch.Tensor] = [
-        torch.mean(hidden_states, dim=-2).squeeze() for hidden_states in all_hidden_states
-    ]
-
-    # now we have a list of tensors of [num_layers, hidden_size]
-    print("embedding shape [num_layers, hidden_size]:", all_mean_embeddings[0].shape)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=30, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=25, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=20, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=15, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=10, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=5, df=df)
-    plot_embeddings_at_layer(all_mean_embeddings, layer_idx=0, df=df)
+    print("embedding shape [num_layers, hidden_size]:", all_embeddings[0].shape)
+    plot_embeddings(all_embeddings, df)
     plt.show()
 
 if __name__ == "__main__":
