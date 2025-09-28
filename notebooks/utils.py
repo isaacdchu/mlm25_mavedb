@@ -90,9 +90,13 @@ PROTEIN_TO_NUCLEOTIDES_N1: dict[str, list[str]] = {
 # ESM C Model
 N_KMEANS_CLUSTERS: int = 3
 EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
-    sequence=True, return_embeddings=True, return_hidden_states=True
+    sequence=True, return_embeddings=True
 )
-DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE: str = "cpu"
+if torch.cuda.is_available():
+    DEVICE = "cuda"
+if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+    DEVICE = "mps"
 MODEL_TYPE: str = "esmc_600m"
 ESM_MODEL: ESMC = ESMC.from_pretrained(MODEL_TYPE).to(DEVICE) # cuda or cpu
 
@@ -137,7 +141,7 @@ def sequence_substitution(sequence: str, pos: int, alt_short: str) -> str:
     Returns:
         str: Modified amino acid sequence
     """
-    if (alt_short == "*"):  # Stop codon
+    if alt_short == "*":  # Stop codon
         return sequence[:pos-1]  # Truncate sequence at position
     return sequence[:pos-1] + alt_short + sequence[pos:]
 
@@ -167,15 +171,17 @@ def find_best_substitution(ref_nucleotides: str, alt_nucleotides_candidates: lis
     best_candidate: str = ""
     for candidate in alt_nucleotides_candidates:
         distance: int = hamming_distance(ref_nucleotides, candidate)
-        if (distance > 0):
+        if distance > 0:
             return candidate
         else:
             best_candidate = candidate
-    if (best_candidate != ""):
-        print(f"Warning: No nucleotide change found for {ref_nucleotides}, using {best_candidate} from candidates: {alt_nucleotides_candidates}")
+    if best_candidate != "":
+        print(f"Warning: No nucleotide change found for {ref_nucleotides}, "
+              f"using {best_candidate} from candidates: {alt_nucleotides_candidates}")
         return best_candidate
-    raise ValueError(f"No valid nucleotide substitution found for {ref_nucleotides} from candidates: {alt_nucleotides_candidates}")
-    
+    raise ValueError(f"No valid nucleotide substitution found for {ref_nucleotides} "
+                     f"from candidates: {alt_nucleotides_candidates}")
+
 
 def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> str:
     """
@@ -189,16 +195,14 @@ def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> s
     # Note: there are multiple codons for each amino acid; we choose one arbitrarily
     # Nucleotide-level differences are insignificant for our purposes
     alt_nucleotides_candidates: list[str] = []
-    
     # Strand is 1: use normal codons
-    if (strand == 1):
+    if strand == 1:
         alt_nucleotides_candidates = PROTEIN_TO_NUCLEOTIDES_P1.get(alt_long, [""])
     # Strand is -1: use reverse complement codons
-    elif (strand == -1):
+    elif strand == -1:
         alt_nucleotides_candidates = PROTEIN_TO_NUCLEOTIDES_N1.get(alt_long, [""])
     else:
         raise ValueError(f"Invalid strand value: {strand}")
-
     alt_nucleotides: str = find_best_substitution(ref_nucleotides, alt_nucleotides_candidates)
     return alt_nucleotides
 
@@ -231,7 +235,8 @@ def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
     )
     ref_nucleotides: str = region_response.json().get("seq", "")
     alt_nucleotides: str = get_nucleotide_change(ref_nucleotides, alt_long, strand)
-    print(f"ENSP: {raw_ensp}, Pos: {pos}, Ref: {ref_nucleotides}, Alt: {alt_long}:{alt_nucleotides}, Strand: {strand}")
+    print(f"ENSP: {raw_ensp}, Pos: {pos}, Ref: {ref_nucleotides}, "
+          f"Alt: {alt_long}:{alt_nucleotides}, Strand: {strand}")
     return f"{seq_region_name}:g.{start}..{end}delins{alt_nucleotides}"
 
 def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
@@ -275,10 +280,8 @@ def get_embedding(sequence: str) -> Tensor:
         protein_2: ESMProtein = ESMProtein(sequence=sequence[-2046:])
         protein_tensor_1: ESMProteinTensor = ESM_MODEL.encode(protein_1)
         protein_tensor_2: ESMProteinTensor = ESM_MODEL.encode(protein_2)
-        logits_1: LogitsOutput = ESM_MODEL.logits(protein_tensor_1, EMBEDDING_CONFIG)
-        logits_2: LogitsOutput = ESM_MODEL.logits(protein_tensor_2, EMBEDDING_CONFIG)
-        output_1: Tensor | None = logits_1.embeddings
-        output_2: Tensor | None = logits_2.embeddings
+        output_1: Tensor | None = ESM_MODEL.logits(protein_tensor_1, EMBEDDING_CONFIG).embeddings
+        output_2: Tensor | None = ESM_MODEL.logits(protein_tensor_2, EMBEDDING_CONFIG).embeddings
         if output_1 is None or output_2 is None:
             raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
         output_1 = output_1.squeeze(0)[1:-1]  # Remove start/end tokens
@@ -291,7 +294,10 @@ def get_embedding(sequence: str) -> Tensor:
         # Average the overlapping area
         overlap = torch.mean(torch.stack([overlap_1, overlap_2]), dim=0)
         # Concatenate the non-overlapping parts with the averaged overlap
-        joint_output: Tensor = torch.cat((output_1[:-overlap_amount], overlap, output_2[overlap_amount:]), dim=0)
+        joint_output: Tensor = torch.cat(
+            (output_1[:-overlap_amount], overlap, output_2[overlap_amount:]),
+            dim=0
+        )
         return joint_output.mean(dim=0)  # Mean over sequence length
 
     # Sequence is within limit

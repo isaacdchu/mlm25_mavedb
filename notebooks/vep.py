@@ -26,7 +26,13 @@ def save_batch(vep_batch: list[dict], save_path: Path) -> None:
         pickle.dump(vep_batch, f)
     logging.info("Saved successfully")
 
-def process_batch(start_index: int, end_index: int, ensp: pd.Series, pos: pd.Series, alt_long: pd.Series) -> list[dict]:
+def process_batch(
+        start_index: int,
+        end_index: int,
+        ensp: pd.Series,
+        pos: pd.Series,
+        alt_long: pd.Series
+    ) -> list[dict]:
     """
     Process a batch of VEP data.
     Args:
@@ -42,13 +48,15 @@ def process_batch(start_index: int, end_index: int, ensp: pd.Series, pos: pd.Ser
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures: list[Future] = []
         for i in range(start_index, end_index):
-            if (i % 4 == 3):
+            if i % 4 == 3:
                 time.sleep(2)
-            futures.append(executor.submit(get_vep_data_threaded, i, ensp.iat[i], pos.iat[i], alt_long.iat[i]))
+            futures.append(
+                executor.submit(get_vep_data_threaded, i, ensp.iat[i], pos.iat[i], alt_long.iat[i])
+            )
     sorted_results = sorted([future.result() for future in futures], key=lambda x: x[0])
     error_occured: bool = False
     for result in sorted_results:
-        if (result[0] < 0):
+        if result[0] < 0:
             logging.error("Failed to fetch VEP data for index %d", 1-result[0])
             error_occured = True
     if not error_occured:
@@ -75,8 +83,9 @@ def get_vep_data_threaded(index: int, ensp: str, pos: int, alt_long: str) -> tup
     while retries_left > 0:
         try:
             vep_data: dict = get_vep_data(ensp, pos, alt_long)
-            if (retries_left < 10):
-                logging.info("Successfully fetched VEP data for index %d after retrying %d times", index, 10 - retries_left)
+            if retries_left < 10:
+                logging.info("Successfully fetched VEP data for index %d " \
+                "after retrying %d times", index, 10 - retries_left)
             return (index, vep_data)
         except (Timeout, ConnectionError, ConnectTimeoutError) as e:
             logging.warning("Connection error fetching VEP data for index %d: %s", index, e)
@@ -101,7 +110,7 @@ def main(*args) -> None:
     Returns:
         None
     """
-    if (len(args) != 3):
+    if len(args) != 3:
         print("Usage: python vep.py <input_csv> <output_pickle> <start_index>")
         sys.exit(1)
 
@@ -115,14 +124,15 @@ def main(*args) -> None:
     df: pd.DataFrame = pd.read_csv(
         csv_path,
         usecols=["accession", "scoreset", "ensp", "pos", "ref_long", "alt_long"],
-        dtype={"accession": str, "scoreset": str, "ensp": str, "pos": int, "ref_long": str, "alt_long": str}
+        dtype={"accession": str, "scoreset": str, "ensp": str,
+               "pos": int, "ref_long": str, "alt_long": str}
     )
 
     i: int = start_index
     last_index_save: int = start_index
     try:
         vep_batch: list[dict] = []
-        while (i < len(df)):
+        while i < len(df):
             end_index = min(i + 100, len(df)) # this index is exclusive
             logging.info("Processing batch: %d-%d/%d", i, end_index - 1, len(df))
             vep_batch = process_batch(i, end_index, df["ensp"], df["pos"], df["alt_long"])
@@ -136,7 +146,10 @@ def main(*args) -> None:
         sys.exit(0)
     except KeyboardInterrupt:
         print("Process interrupted by user.")
-        logging.warning("Process interrupted by user at index %d. Last saved index was %d. Start from index %d to continue work.", i, last_index_save, last_index_save + 1)
+        logging.warning("Process interrupted by user at index %d. " \
+            "Last saved index was %d. Start from index %d to continue work.",
+            i, last_index_save, last_index_save + 1
+        )
         sys.exit(0)
     except (Timeout, ConnectionError) as e:
         logging.warning("Connection error at index %d: %s. Trying again.", i, e)
@@ -145,7 +158,10 @@ def main(*args) -> None:
         logging.error("Error processing row %d: %s", i, e)
     except Exception as e:
         logging.error("Unexpected error: %s", e)
-    logging.info("Processed up through index %d before error. Start from index %d to continue work.", last_index_save, last_index_save + 1)
+    logging.info("Processed up through index %d before error. " \
+        "Start from index %d to continue work.",
+        last_index_save, last_index_save + 1
+    )
     sys.exit(1)
 
 if __name__ == "__main__":
