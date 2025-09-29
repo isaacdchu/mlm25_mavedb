@@ -27,6 +27,7 @@ ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/ensp_sequence_map.pkl")
 TRAIN_VEP_DATA_PATH: os.PathLike = Path("../data/train/train_vep.pkl")
 
 ENSP_EMBEDDINGS_MAP_PATH: os.PathLike = Path("../data/ensp_embeddings_map.pkl")
+TRAIN_ENSP_EMBEDDINGS_PATH: os.PathLike = Path("../data/train/ensp_embeddings.pkl")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
