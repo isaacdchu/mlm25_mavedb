@@ -15,6 +15,7 @@ PROCESSED_TEST_PATH: os.PathLike = Path("../data/test/processed_test.csv")
 PROCESSED_TRAIN_PATH: os.PathLike = Path("../data/train/processed_train.csv")
 TRAIN_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_sequence_map.pkl")
 TEST_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/test/test_ensp_sequence_map.pkl")
+TRAIN_VEP_DATA_PATH: os.PathLike = Path("../data/train/train_vep.pkl")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
@@ -243,3 +244,20 @@ def pickle_to_dict(file_location: os.PathLike) -> dict[Any, Any]:
     with open(file_location, "rb") as f:
         dictionary = pickle.load(f)
         return dictionary
+
+def vep_from_pickle(vep_data_path: os.PathLike) -> list[dict]:
+    """
+    Load VEP data from a pickle file.
+    Args:
+        vep_data_path (os.PathLike): Path to the pickle file containing VEP data
+    Returns:
+        list[dict]: List of dictionaries containing VEP data
+    """
+    vep_data: list[dict] = []
+    with open(vep_data_path, "rb") as f:
+        while True:
+            try:
+                vep_data.append(pickle.load(f))
+            except EOFError:
+                break
+    return vep_data
