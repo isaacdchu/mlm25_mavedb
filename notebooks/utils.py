@@ -8,14 +8,26 @@ import pickle
 from typing import Any
 import requests
 
+from esm.models.esmc import ESMC
+from esm.sdk.api import (
+    ESMProtein,
+    ESMProteinTensor,
+    LogitsConfig,
+    LogitsOutput,
+)
+from torch import Tensor
+import torch
+
 # All file paths
 RAW_TRAIN_PATH: os.PathLike = Path("../data/train/raw_train.csv")
 RAW_TEST_PATH: os.PathLike = Path("../data/test/raw_test.csv")
 PROCESSED_TEST_PATH: os.PathLike = Path("../data/test/processed_test.csv")
 PROCESSED_TRAIN_PATH: os.PathLike = Path("../data/train/processed_train.csv")
-TRAIN_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/train/train_ensp_sequence_map.pkl")
-TEST_ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/test/test_ensp_sequence_map.pkl")
+ENSP_SEQUENCE_MAP_PATH: os.PathLike = Path("../data/ensp_sequence_map.pkl")
 TRAIN_VEP_DATA_PATH: os.PathLike = Path("../data/train/train_vep.pkl")
+
+ENSP_EMBEDDINGS_MAP_PATH: os.PathLike = Path("../data/ensp_embeddings_map.pkl")
+TRAIN_ENSP_EMBEDDINGS_PATH: os.PathLike = Path("../data/train/ensp_embeddings.pkl")
 
 # API endpoints
 MAVEDB_API = "https://api.mavedb.org/"
@@ -26,7 +38,6 @@ TIMEOUT = 10  # seconds
 
 # Protein-nucleotide mapping (codons)
 # Note: Each amino acid can be coded by multiple codons; here we list all possible codons
-# TODO: Verify that both the P1 and N1 mappings are correct by hand
 # Strand 1 (positive strand)
 PROTEIN_TO_NUCLEOTIDES_P1: dict[str, list[str]] = {
     "Ala": ["GCA", "GCC", "GCG", "GCT"],
@@ -77,7 +88,21 @@ PROTEIN_TO_NUCLEOTIDES_N1: dict[str, list[str]] = {
     "Ter": ["TTA", "CTA", "TCA"]  # Stop codons
 }
 
+# ESM C Model
+N_KMEANS_CLUSTERS: int = 3
+EMBEDDING_CONFIG: LogitsConfig = LogitsConfig(
+    sequence=True, return_embeddings=True
+)
+DEVICE: str = "cpu"
+if torch.cuda.is_available():
+    DEVICE = "cuda"
+if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+    DEVICE = "mps"
+MODEL_TYPE: str = "esmc_600m"
+ESM_MODEL: ESMC = ESMC.from_pretrained(MODEL_TYPE).to(DEVICE) # cuda or cpu
+
 # Helper functions
+# Full sequence
 def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     """
     Fetch the full protein sequence from Ensembl given an Ensembl Protein ID.
@@ -106,6 +131,22 @@ def get_full_sequence(raw_ensp: str, ensp_sequence_map: dict[str, str]) -> str:
     ensp_sequence_map[raw_ensp] = sequence
     return sequence
 
+def sequence_substitution(sequence: str, pos: int, alt_short: str) -> str:
+    """
+    Substitute the amino acid at the given position in the sequence with the alternate amino acid.
+    Assumes valid inputs.
+    Args:
+        sequence (str): Original amino acid sequence
+        pos (int): Position to substitute (1-indexed)
+        alt_short (str): Alternate amino acid (single-letter code)
+    Returns:
+        str: Modified amino acid sequence
+    """
+    if alt_short == "*":  # Stop codon
+        return sequence[:pos-1]  # Truncate sequence at position
+    return sequence[:pos-1] + alt_short + sequence[pos:]
+
+# VEP data
 def hamming_distance(s1: str, s2: str) -> int:
     """
     Calculate the Hamming distance between two strings.
@@ -131,15 +172,17 @@ def find_best_substitution(ref_nucleotides: str, alt_nucleotides_candidates: lis
     best_candidate: str = ""
     for candidate in alt_nucleotides_candidates:
         distance: int = hamming_distance(ref_nucleotides, candidate)
-        if (distance > 0):
+        if distance > 0:
             return candidate
         else:
             best_candidate = candidate
-    if (best_candidate != ""):
-        print(f"Warning: No nucleotide change found for {ref_nucleotides}, using {best_candidate} from candidates: {alt_nucleotides_candidates}")
+    if best_candidate != "":
+        print(f"Warning: No nucleotide change found for {ref_nucleotides}, "
+              f"using {best_candidate} from candidates: {alt_nucleotides_candidates}")
         return best_candidate
-    raise ValueError(f"No valid nucleotide substitution found for {ref_nucleotides} from candidates: {alt_nucleotides_candidates}")
-    
+    raise ValueError(f"No valid nucleotide substitution found for {ref_nucleotides} "
+                     f"from candidates: {alt_nucleotides_candidates}")
+
 
 def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> str:
     """
@@ -153,16 +196,14 @@ def get_nucleotide_change(ref_nucleotides: str, alt_long: str, strand: int) -> s
     # Note: there are multiple codons for each amino acid; we choose one arbitrarily
     # Nucleotide-level differences are insignificant for our purposes
     alt_nucleotides_candidates: list[str] = []
-    
     # Strand is 1: use normal codons
-    if (strand == 1):
+    if strand == 1:
         alt_nucleotides_candidates = PROTEIN_TO_NUCLEOTIDES_P1.get(alt_long, [""])
     # Strand is -1: use reverse complement codons
-    elif (strand == -1):
+    elif strand == -1:
         alt_nucleotides_candidates = PROTEIN_TO_NUCLEOTIDES_N1.get(alt_long, [""])
     else:
         raise ValueError(f"Invalid strand value: {strand}")
-
     alt_nucleotides: str = find_best_substitution(ref_nucleotides, alt_nucleotides_candidates)
     return alt_nucleotides
 
@@ -174,7 +215,7 @@ def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
         pos (int): Position of the variant
         alt_long (str): Alternate amino acid (eg Leu for L/Leucine)
     Returns:
-        str: HGVS notation (e.g., "ENSP00000354587.3:p.Pro175Leu")
+        str: HGVS notation (e.g., "X:g.15594962..15594964delinsTTA")
     """
     ensp: str = raw_ensp.split(".")[0]  # Remove version number if present
     translation_response: requests.Response = requests.get(
@@ -195,7 +236,8 @@ def to_hgvs(raw_ensp: str, pos: int, alt_long: str) -> str:
     )
     ref_nucleotides: str = region_response.json().get("seq", "")
     alt_nucleotides: str = get_nucleotide_change(ref_nucleotides, alt_long, strand)
-    print(f"ENSP: {raw_ensp}, Pos: {pos}, Ref: {ref_nucleotides}, Alt: {alt_long}:{alt_nucleotides}, Strand: {strand}")
+    print(f"ENSP: {raw_ensp}, Pos: {pos}, Ref: {ref_nucleotides}, "
+          f"Alt: {alt_long}:{alt_nucleotides}, Strand: {strand}")
     return f"{seq_region_name}:g.{start}..{end}delins{alt_nucleotides}"
 
 def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
@@ -220,6 +262,54 @@ def get_vep_data(raw_ensp: str, pos: int, alt_long: str) -> dict:
         raise ValueError(f"Error fetching VEP data for {hgvs}: {response.status_code}\n"
                          f"Response: {response.text}")
     return response.json()[0]
+
+# ESM C embedding utilities
+def get_embedding(sequence: str) -> Tensor:
+    """
+    Get the ESM C embedding for a given protein sequence.
+    Args:
+        sequence (str): Protein sequence
+    Returns:
+        Tensor: The output embeddings tensor of shape (sequence_length, 1152)
+    Raises:
+        ValueError: If the embeddings are not found in the logits output
+    """
+    # Handle sequences longer than 2048 by splitting into chunks
+    if len(sequence) > 2046:
+        # Take average of 2 embeddings of chunks
+        protein_1: ESMProtein = ESMProtein(sequence=sequence[:2046])
+        protein_2: ESMProtein = ESMProtein(sequence=sequence[-2046:])
+        protein_tensor_1: ESMProteinTensor = ESM_MODEL.encode(protein_1)
+        protein_tensor_2: ESMProteinTensor = ESM_MODEL.encode(protein_2)
+        output_1: Tensor | None = ESM_MODEL.logits(protein_tensor_1, EMBEDDING_CONFIG).embeddings
+        output_2: Tensor | None = ESM_MODEL.logits(protein_tensor_2, EMBEDDING_CONFIG).embeddings
+        if output_1 is None or output_2 is None:
+            raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
+        output_1 = output_1.squeeze(0)[1:-1]  # Remove start/end tokens
+        output_2 = output_2.squeeze(0)[1:-1]  # Remove start/end tokens
+        # Overlap the proteins on their intersection
+        overlap_amount: int = 2 * 2046 - len(sequence)
+        # Get overlapping slices
+        overlap_1 = output_1[-overlap_amount:]
+        overlap_2 = output_2[:overlap_amount]
+        # Average the overlapping area
+        overlap = torch.mean(torch.stack([overlap_1, overlap_2]), dim=0)
+        # Concatenate the non-overlapping parts with the averaged overlap
+        joint_output: Tensor = torch.cat(
+            (output_1[:-overlap_amount], overlap, output_2[overlap_amount:]),
+            dim=0
+        )
+        return joint_output.mean(dim=0)  # Mean over sequence length
+
+    # Sequence is within limit
+    protein: ESMProtein = ESMProtein(sequence=sequence)
+    protein_tensor: ESMProteinTensor = ESM_MODEL.encode(protein)
+    logits: LogitsOutput = ESM_MODEL.logits(protein_tensor, EMBEDDING_CONFIG)
+    output: Tensor | None = logits.embeddings
+    if output is None:
+        raise ValueError(f"Embeddings not found in logits output for sequence: {sequence}")
+    # Return the first (and only) element in the batch and remove start/end tokens
+    return output.squeeze(0)[1:-1].mean(dim=0)  # Mean over sequence length
 
 def dict_to_pickle(dictionary: dict[Any, Any], file_location: os.PathLike) -> None:
     """
@@ -261,3 +351,27 @@ def vep_from_pickle(vep_data_path: os.PathLike) -> list[dict]:
             except EOFError:
                 break
     return vep_data
+
+def save_embeddings(embeddings: list[LogitsOutput], path: os.PathLike) -> None:
+    """
+    Save a list of LogitsOutput embeddings to a pickle file.
+    Args:
+        embeddings (list[LogitsOutput]): List of LogitsOutput objects to save
+        path (os.PathLike): Path to the output pickle file
+    Returns:
+        None
+    """
+    with open(path, "wb") as f:
+        pickle.dump(embeddings, f)
+
+def load_embeddings(path: os.PathLike) -> list[LogitsOutput]:
+    """
+    Load a list of LogitsOutput embeddings from a pickle file.
+    Args:
+        path (os.PathLike): Path to the input pickle file
+    Returns:
+        list[LogitsOutput]: List of LogitsOutput objects loaded from the file
+    """
+    with open(path, "rb") as f:
+        embeddings: list[LogitsOutput] = pickle.load(f)
+    return embeddings
