@@ -375,3 +375,16 @@ def load_embeddings(path: os.PathLike) -> list[LogitsOutput]:
     with open(path, "rb") as f:
         embeddings: list[LogitsOutput] = pickle.load(f)
     return embeddings
+
+def make_vep_key(ensp: str, pos: int, ref_long: str, alt_long: str) -> str:
+    """
+    Create a unique key for VEP data based on variant information.
+    Args:
+        ensp (str): Ensembl Protein ID (ENSP00000XXXXXX.X)
+        pos (int): Position of the variant
+        ref_long (str): Reference amino acid (eg Leu for L/Leucine)
+        alt_long (str): Alternate amino acid (eg Val for V/Valine)
+    Returns:
+        str: Unique key representing the variant
+    """
+    return f"{ensp}_{pos}_{ref_long}_{alt_long}"
