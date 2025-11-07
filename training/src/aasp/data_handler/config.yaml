@@ -1,5 +1,1 @@
-data:
-  train_path: "/train/shuffled_processed_train.csv"
-  train_vep_path: "/train/processed_train_vep.pkl"
-  train_embeddings_map_path: "/train/processed_train_embeddings.pkl"
-  sequence_map_path: "/ensp_sequence_map.pkl"
+# Stores all relevant data paths and configuration parameters for the data handler
