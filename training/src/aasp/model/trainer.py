@@ -42,7 +42,8 @@ class Trainer:
             biotype = X[:, 1].long()
             ref_aa = X[:, 2].long()
             alt_aa = X[:, 3].long()
-            consequence = X[:, 4:]
+            scoreset = X[:, 4].long()
+            consequence = X[:, 5:]
 
             self.optimizer.zero_grad()
             y_hat = self.model(
@@ -68,12 +69,14 @@ class Trainer:
                 biotype = X[:, 1].long()
                 ref_aa = X[:, 2].long()
                 alt_aa = X[:, 3].long()
-                consequence = X[:, 4:]
+                scoreset = X[:, 4].long()
+                consequence = X[:, 5:]
                 y_hat = self.model(
                     distance,
                     biotype=biotype,
                     ref_aa=ref_aa,
                     alt_aa=alt_aa,
+                    scoreset=scoreset,
                     consequence=consequence
                 )
                 loss = self.loss_fn(y_hat, y)
