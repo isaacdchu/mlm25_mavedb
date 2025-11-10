@@ -25,6 +25,8 @@ categorical_config:
   ref_long: "embedding"
   alt_long: "embedding"
   consequence: "multi_hot"
+  scoreset: "embedding"
+
 
 hyperparameters:
   train_batch_size: 32
