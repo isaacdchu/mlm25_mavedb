@@ -90,8 +90,14 @@ class AASPDataset(Dataset):
         return self.X[idx], self.y[idx]
 '''
 # In main script aka use case:
-fields = ["ref_embedding", "alt_embedding", "biotype", "consequence"]
-cat_config = {"biotype": "embedding", "consequence": "multi_hot"}
+fields = ["ref_embedding", "alt_embedding", "biotype", "consequence", "ref_long", "alt_long", "scoreset"]
+cat_config = {
+    "biotype": "embedding",
+    "ref_long": "embedding",
+    "alt_long": "embedding",
+    "scoreset": "embedding",      
+    "consequence": "multi_hot"
+}
 dataset = AASPDataset(
     config_path="config.yaml",
     fields=fields,
