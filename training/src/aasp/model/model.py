@@ -14,24 +14,14 @@ class BaselineModel(nn.Module):
         self.cat_embeddings = nn.ModuleDict()
         self.multi_hot_layers = nn.ModuleDict()
 
-        # Set up embeddings for each categorical feature
-        if cat_dims:
-            for name, (num_cats, embed_dim) in cat_dims.items():
-                self.cat_embeddings[name] = nn.Embedding(num_cats, embed_dim)
+        # Standard categorical embeddings (biotype, ref_aa, alt_aa, scoreset)
+        for name, (num_cats, embed_dim) in cat_dims.items():
+            self.cat_embeddings[name] = nn.Embedding(num_cats, embed_dim)
 
-        # Optionally transform multi-hot vectors to a fixed dim
-        if multi_hot_dims:
-            for name, out_dim in multi_hot_dims.items():
-                self.multi_hot_layers[name] = nn.Linear(out_dim, out_dim)
+        for name, out_dim in multi_hot_dims.items():
+            self.multi_hot_layers[name] = nn.Linear(out_dim, out_dim)
 
-        # Compute final input dimension dynamically
-        concat_dim = input_dim
-        if cat_dims:
-            for _, (_, embed_dim) in cat_dims.items():
-                concat_dim += embed_dim
-        if multi_hot_dims:
-            for _, out_dim in multi_hot_dims.items():
-                concat_dim += out_dim
+        concat_dim = input_dim + sum(e[1] for e in cat_dims.values()) + sum(multi_hot_dims.values())
 
         # Simple feedforward MLP head
         self.network = nn.Sequential(
@@ -69,7 +59,8 @@ model = BaselineModel(
     cat_dims={
         "biotype": (len(biotype_vocab), 4),
         "ref_aa": (len(aa_vocab), 4),
-        "alt_aa": (len(aa_vocab), 4)
+        "alt_aa": (len(aa_vocab), 4),
+        "scoreset": (len(scoreset_vocab), 4)
     },
     multi_hot_dims={"consequence": len(consequence_vocab)},
     hidden_dims=(64, 16),
@@ -84,6 +75,7 @@ y_hat = model(
     biotype=biotype_ids,              # [batch]
     ref_aa=ref_aa_ids,                # [batch]
     alt_aa=alt_aa_ids,                # [batch]
+    scoreset=scoreset_ids,            # [batch]
     consequence=consequence_multihot  # [batch, num_consequence]
 )
 '''
