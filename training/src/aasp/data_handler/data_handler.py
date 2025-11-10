@@ -1,8 +1,4 @@
-"""
-Class for handling data operations in the AASP module.
-Loads training/test data, manages data splits, and provides data loaders.
-"""
-
+# feature_engineering/data_handler.py
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,26 +11,31 @@ import pandas as pd
 
 class AASPConfig:
     """
-    Loads configuration parameters from config.yaml and exposes them as attributes.
+    Reads config YAML and exposes attributes.
 
-    Example YAML shape:
-    -------------------
-    file_path: "../../../data/train/combined_train_data.pkl"
+    YAML example:
+    -------------
+    file_path: "data/train/combined_train_data.pkl"
+
     hyperparameters:
-      learning_rate: 0.0001
-      val_frac:      0.15
-      test_frac:     0.0
-      seed:          0
+      val_frac: 0.15
+      test_frac: 0.0
+      seed: 0
     """
 
     def __init__(self, config_path: str = "config.yaml"):
-        self._path = Path(config_path)
+        p = Path(config_path)
+        if not p.exists():
+            raise FileNotFoundError(f"Config file not found: {p}")
+        with open(p, "r") as f:
+            cfg = yaml.safe_load(f) or {}
 
-        if not self._path.exists():
-            raise FileNotFoundError(f"Config file not found: {self._path}")
+        self.file_path: str = cfg.get("file_path")
 
-        with open(self._path, "r") as f:
-            cfg = yaml.safe_load(f)
+        hp = cfg.get("hyperparameters", {}) or {}
+        self.val_frac: float = float(hp.get("val_frac", 0.15))
+        self.test_frac: float = float(hp.get("test_frac", 0.0))
+        self.seed: int = int(hp.get("seed", 0))
 
         # top-level
         self.file_path     = cfg.get("file_path")
@@ -44,7 +45,6 @@ class AASPConfig:
         self.val_frac      = float(param.get("val_frac", 0.15))
         self.test_frac     = float(param.get("test_frac", 0.0))
         self.seed          = int(param.get("seed", 0))
-        self.features = 
 
     def __repr__(self):
         return (
@@ -53,22 +53,20 @@ class AASPConfig:
             f"val_frac={self.val_frac}, test_frac={self.test_frac}, seed={self.seed})"
         )
 
+# --------------------------- DataHandler ------------------------------
 
 class AASPDataHandler:
     """
-    Concrete class – NOT an interface.
+    Utility for loading, filtering, encoding, and shaping AASP records.
 
-    Methods are empty stubs right now but *this object exists*.
-    The AASPDataset can already depend on the shape / names of these APIs.
+    - Records are list[dict] from a pickle.
+    - Methods here are pure transforms (no PyTorch deps).
     """
 
     def __init__(self, config: AASPConfig) -> None:
-        """
-        Just store config, do not load anything here
-        """
-        self.config: AASPConfig = config
+        self.config = config
 
-    # -------------------------------------------------------------------------
+    # ---- IO ----
     def load_pickle(self, path: Optional[str] = None) -> List[Mapping[str, Any]]:
         """load the raw list of dict records from .pkl"""
         # 1) decide which path to use

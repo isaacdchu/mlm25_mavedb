@@ -17,5 +17,3 @@ features:
   alt_embedding: true
   consequence: true
   scoreset: true
-
-
