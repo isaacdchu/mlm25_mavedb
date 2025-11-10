@@ -17,3 +17,19 @@ features:
   alt_embedding: true
   consequence: true
   scoreset: true
+
+fuse_mode: "distance"           # or "concat"
+embed_metric: "cosine"          # or "euclidean"
+categorical_config:
+  biotype: "embedding"
+  ref_long: "embedding"
+  alt_long: "embedding"
+  consequence: "multi_hot"
+
+hyperparameters:
+  train_batch_size: 32
+  val_batch_size: 256
+  num_epochs: 10
+  learning_rate: 0.001
+  hidden_dims: [64, 16]
+  dropout_rates: [0.2, 0.1]
