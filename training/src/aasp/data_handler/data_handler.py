@@ -8,19 +8,47 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 import numpy as np
+import yaml
+from pathlib import Path
 
-
-@dataclass
 class AASPConfig:
     """
-    Minimal config object. Extend later as needed.
+    Loads configuration parameters from config.yaml and exposes them as attributes.
+
+    Example YAML shape:
+    -------------------
+    file_path: "../../../data/train/combined_train_data.pkl"
+    hyperparameters:
+      learning_rate: 0.0001
+      val_frac:      0.15
+      test_frac:     0.0
+      seed:          0
     """
-    pkl_path: str
-    fields: List[str]
-    val_frac: float = 0.15
-    test_frac: float = 0.0
-    seed: int = 42
-    group_by: Optional[str] = None
+
+    def __init__(self, config_path: str = "config.yaml"):
+        self._path = Path(config_path)
+
+        if not self._path.exists():
+            raise FileNotFoundError(f"Config file not found: {self._path}")
+
+        with open(self._path, "r") as f:
+            cfg = yaml.safe_load(f)
+
+        # top-level
+        self.file_path     = cfg.get("file_path")
+
+        # hyperparams block
+        param              = cfg.get("hyperparameters", {})
+        self.val_frac      = float(param.get("val_frac", 0.15))
+        self.test_frac     = float(param.get("test_frac", 0.0))
+        self.seed          = int(param.get("seed", 0))
+
+    def __repr__(self):
+        return (
+            f"AASPConfig(file_path={self.file_path}, "
+            f"lr={self.learning_rate}, "
+            f"val_frac={self.val_frac}, test_frac={self.test_frac}, seed={self.seed})"
+        )
 
 
 class AASPDataHandler:
@@ -31,11 +59,11 @@ class AASPDataHandler:
     The AASPDataset can already depend on the shape / names of these APIs.
     """
 
-    def __init__(self, config: AASPConfig):
+    def __init__(self, config: AASPConfig) -> None:
         """
         Just store config, do not load anything here
         """
-        self.config = config
+        self.config: AASPConfig = config
 
     # -------------------------------------------------------------------------
     def load_pickle(self, path: Optional[str] = None) -> List[Mapping[str, Any]]:
@@ -46,20 +74,12 @@ class AASPDataHandler:
         """return new records list with only selected keys"""
         raise NotImplementedError
 
-    def filter(self, records, *, scoresets=None, biotypes=None, max_rows=None):
+    # Change it to take a lamda or function
+    def filter():
         """return filtered list of records"""
         raise NotImplementedError
 
     # -------------------------------------------------------------------------
-    def split(self, records, *, val_frac=None, test_frac=None, seed=None, group_by=None):
-        """return (train_records, val_records, test_records)"""
-        raise NotImplementedError
-
-    # -------------------------------------------------------------------------
-    def fit_vocab(self, records, key: str, add_unk=True, unk_token="<UNK>"):
-        """build category→id mapping"""
-        raise NotImplementedError
-
     def encode(self, records, key: str, vocab: Mapping[str, int], unk_token="<UNK>"):
         """convert string categories → integer ids"""
         raise NotImplementedError
@@ -69,48 +89,8 @@ class AASPDataHandler:
         raise NotImplementedError
 
     # -------------------------------------------------------------------------
-    def get_numeric(self, records, keys, dtype="float32") -> np.ndarray:
-        """extract numeric columns into 2D float array"""
-        raise NotImplementedError
-
     def get_target(self, records, key="score", dtype="float32") -> np.ndarray:
         """extract target score column"""
-        raise NotImplementedError
-
-    # -------------------------------------------------------------------------
-    def get_embedding(self, records, key, *, pad_to=None, truncate_to=None, dtype="float32"):
-        """extract stored embedding vectors"""
-        raise NotImplementedError
-
-    def fuse_embeddings(self, ref_emb, alt_emb, how="concat"):
-        """combine ref + alt embeddings into 1 vector"""
-        raise NotImplementedError
-
-    # -------------------------------------------------------------------------
-    def get_sequence(self, records, key="sequence") -> List[str]:
-        """return list of raw sequence strings"""
-        raise NotImplementedError
-
-    def tokenize_sequence(self, seqs, alphabet=tuple("ACDEFGHIKLMNPQRSTVWY"), unk_token="X"):
-        """simple mapping: AA char → integer"""
-        raise NotImplementedError
-
-    # -------------------------------------------------------------------------
-    def fit_scaler(self, X: np.ndarray) -> Dict[str, np.ndarray]:
-        """compute mean/std stats"""
-        raise NotImplementedError
-
-    def apply_scaler(self, X, stats):
-        """standardize using stats"""
-        raise NotImplementedError
-
-    # -------------------------------------------------------------------------
-    def cache_arrays(self, name: str, **arrays):
-        """write npz of arrays"""
-        raise NotImplementedError
-
-    def load_cached(self, name: str) -> Dict[str, np.ndarray]:
-        """load npz arrays"""
         raise NotImplementedError
 
     # -------------------------------------------------------------------------

@@ -32,17 +32,6 @@ Return new records that keep only the specified **input fields** plus `"score"`.
 Return a subset of records based on optional criteria, useful before splitting.  
 This is purely a convenience filter.
 
----
-
-### `split(records, *, val_frac=None, test_frac=None, seed=None, group_by=None)`
-Split into `(train, val, test)`.  
-If `group_by` is provided (e.g. `"scoreset"`), groups must not be split across partitions.
-
----
-
-### `fit_vocab(records, key, add_unk=True, unk_token="<UNK>")`
-Build a string → integer ID mapping for categorical fields.  
-Should be called only on TRAIN to avoid leakage.
 
 ---
 
@@ -54,11 +43,6 @@ Convert category strings into integer ID numpy array based on a given vocab.
 ### `one_hot(ids, num_classes)`
 Convert integer category IDs to one-hot vectors.  
 Primarily for baselines and debugging.
-
----
-
-### `get_numeric(records, keys)`
-Extract numeric columns into a `[N, K]` numpy array.
 
 ---
 
@@ -81,37 +65,6 @@ Combine reference and alternate embedding matrices. Options:
 * `"concat"` → `[ref, alt]`
 * `"diff"` → `alt - ref`
 * `"sum"` → `alt + ref`
-
----
-
-### `get_sequence(records, key="sequence")`
-Return list of sequence strings.
-
----
-
-### `tokenize_sequence(seqs, alphabet=20AA, unk_token="X")`
-Map characters in sequences to integer IDs.  
-(Useful for simple baselines — PLMs have their own tokenizers.)
-
----
-
-### `fit_scaler(X)`
-Compute mean/std for numeric features for standardization.
-
----
-
-### `apply_scaler(X, stats)`
-Apply standardization using stats from `fit_scaler()`.
-
----
-
-### `cache_arrays(name, **arrays)`
-Write named numpy arrays to disk (e.g. `.npz`) for caching.
-
----
-
-### `load_cached(name)`
-Load cached arrays previously written by `cache_arrays`.
 
 ---
 
