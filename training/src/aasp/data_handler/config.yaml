@@ -4,4 +4,18 @@ parameters:
   val_frac: 0.15
   test_frac: 0.0
   seed: 0
+features:
+  accession: true
+  ensp: true
+  ref_long: true
+  alt_long: true
+  pos: true
+  score: true
+  is_ter: true
+  biotype: true
+  ref_embedding: true
+  alt_embedding: true
+  consequence: true
+  scoreset: true
+
 

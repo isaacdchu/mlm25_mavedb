@@ -44,6 +44,7 @@ class AASPConfig:
         self.val_frac      = float(param.get("val_frac", 0.15))
         self.test_frac     = float(param.get("test_frac", 0.0))
         self.seed          = int(param.get("seed", 0))
+        self.features = 
 
     def __repr__(self):
         return (
@@ -73,20 +74,11 @@ class AASPDataHandler:
         # 1) decide which path to use
         src = path if path is not None else self.config.file_path
 
-        # 2) resolve relative to the config YAML location
-        # e.g., config.yaml in .../project/config/config.yaml
-        # and file_path: ../../data/train/combined_train_data.pkl
-        cfg_dir = self.config._path.parent
-        p = (cfg_dir / src).resolve() if not Path(src).is_absolute() else Path(src)
-
-        if not p.exists():
-            raise FileNotFoundError(f"Pickle file not found: {p}")
-
-        # 3) load the pickle
+        # 2) load the pickle
         with open(p, "rb") as f:
             obj = pickle.load(f)
 
-        # 4) normalize to list-of-dicts
+        # 3) normalize to list-of-dicts
         #    - case A: already list-of-dicts
         if isinstance(obj, list) and (len(obj) == 0 or isinstance(obj[0], Mapping)):
             return obj  # type: ignore[return-value]
