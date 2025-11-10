@@ -1,5 +1,5 @@
 # Stores all relevant data paths and configuration parameters for the data handler
-file_path: "../../../data/train/combined_train_data.pkl"
+file_path: "../../../../data/train/combined_train_data.pkl"
 parameters:
   val_frac: 0.15
   test_frac: 0.0
