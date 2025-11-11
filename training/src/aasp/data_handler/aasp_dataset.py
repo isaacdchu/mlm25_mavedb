@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from training.src.aasp.data_handler.data_handler import AASPConfig, AASPDataHandler
+from src.aasp.data_handler.data_handler import AASPConfig, AASPDataHandler
 
 class AASPDataset(Dataset):
     """
