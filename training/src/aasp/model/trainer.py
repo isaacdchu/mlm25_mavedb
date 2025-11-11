@@ -51,6 +51,7 @@ class Trainer:
                 biotype=biotype,
                 ref_aa=ref_aa,
                 alt_aa=alt_aa,
+                scoreset=scoreset,
                 consequence=consequence
             )
             loss = self.loss_fn(y_hat, y)
