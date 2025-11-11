@@ -24,7 +24,7 @@ class AASPConfig:
     """
 
     def __init__(self, config_path: str = "config.yaml"):
-        p = Path(config_path)
+        p = Path(__file__).parent / config_path
         if not p.exists():
             raise FileNotFoundError(f"Config file not found: {p}")
         with open(p, "r") as f:
@@ -71,6 +71,14 @@ class AASPDataHandler:
         """load the raw list of dict records from .pkl"""
         # 1) decide which path to use
         src = path if path is not None else self.config.file_path
+
+        # path of THIS file (data_handler.py)
+        HERE = Path(__file__).parent
+
+        # go up to project root (depends on structure)
+        ROOT = HERE.parents[3]      # adjust number until ROOT is correct
+
+        p = ROOT / "data" / "train" / "combined_train_data.pkl"
 
         # 2) load the pickle
         with open(p, "rb") as f:
@@ -402,3 +410,67 @@ class AASPDataHandler:
                 lines.append(f"Top {field} values: {top5}")
 
         return "\n".join(lines)
+    
+    def get_embedding(
+        self,
+        records: Sequence[Mapping[str, Any]],
+        key: str,
+        pad_to: Optional[int] = None,
+        truncate_to: Optional[int] = None,
+        dtype: str = "float32",
+    ) -> np.ndarray:
+        """
+        Extract an embedding field (e.g., 'ref_embedding') to a 2D array [N, D].
+        Optionally truncate or right-pad to a fixed length.
+        """
+        vecs: list[np.ndarray] = []
+        for i, rec in enumerate(records):
+            v = rec.get(key, None)
+            if v is None:
+                raise KeyError(f"get_embedding: record {i} missing key '{key}'")
+            arr = np.asarray(v, dtype=dtype)
+
+            # optional truncate/pad for safety (usually not needed if D is fixed)
+            if truncate_to is not None and arr.shape[0] > truncate_to:
+                arr = arr[:truncate_to]
+            if pad_to is not None and arr.shape[0] < pad_to:
+                pad = np.zeros((pad_to - arr.shape[0],), dtype=dtype)
+                arr = np.concatenate([arr, pad], axis=0)
+
+            vecs.append(arr)
+
+        X = np.stack(vecs, axis=0)  # [N, D]
+        return X
+
+    def compute_distance(
+        self,
+        records: Sequence[Mapping[str, Any]],
+        method: str = "cosine",
+        ref_key: str = "ref_embedding",
+        alt_key: str = "alt_embedding",
+        pad_to: Optional[int] = None,
+        truncate_to: Optional[int] = None,
+        dtype: str = "float32",
+        eps: float = 1e-8,
+    ) -> np.ndarray:
+        """
+        Compute a 1D distance between ref and alt embeddings for each record.
+        Returns shape [N, 1].
+        Supported methods: 'cosine', 'euclidean', 'manhattan'.
+        """
+        ref = self.get_embedding(records, ref_key, pad_to, truncate_to, dtype)  # [N, D]
+        alt = self.get_embedding(records, alt_key, pad_to, truncate_to, dtype)  # [N, D]
+
+        if method == "cosine":
+            num = (ref * alt).sum(axis=1)
+            den = np.linalg.norm(ref, axis=1) * np.linalg.norm(alt, axis=1) + eps
+            dist = 1.0 - (num / den)
+        elif method == "euclidean":
+            diff = ref - alt
+            dist = np.linalg.norm(diff, axis=1)
+        elif method == "manhattan":
+            dist = np.abs(ref - alt).sum(axis=1)
+        else:
+            raise ValueError(f"compute_distance: unknown method '{method}'")
+
+        return dist.astype(dtype).reshape(-1, 1)
