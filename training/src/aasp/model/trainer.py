@@ -45,6 +45,7 @@ class Trainer:
         # ---
 
         for (X, y) in self.train_loader:
+            print("Hello")
             X, y = X.to(self.device), y.to(self.device)
             distance = X[:, 0:1]
             biotype = X[:, 1].long()
@@ -59,6 +60,7 @@ class Trainer:
                 biotype=biotype,
                 ref_aa=ref_aa,
                 alt_aa=alt_aa,
+                scoreset=scoreset,
                 consequence=consequence
             )
             loss = self.loss_fn(y_hat, y)
