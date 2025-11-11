@@ -79,7 +79,7 @@ class AASPDataHandler:
         ROOT = HERE.parents[3]      # adjust number until ROOT is correct
 
         p = ROOT / "data" / "train" / "combined_train_data.pkl"
-
+        print(f"Loading data from: {p}")
         # 2) load the pickle
         with open(p, "rb") as f:
             obj = pickle.load(f)
