@@ -68,9 +68,16 @@ def main():
     print(">>> building dataset...")
     dataset = AASPDataset(
         config_path="config.yaml",
-        fields=["ref_embedding", "alt_embedding"],   # minimal feature set
-        fuse_mode="distance",                        # produces X[:, 0:1]
-        embed_metric="cosine"
+        fields=["ref_embedding", "alt_embedding", "biotype", "consequence", "ref_long", "alt_long", "scoreset"],
+        fuse_mode="distance",            # puts distance at X[:,0]
+        embed_metric="cosine",
+        categorical_config={
+            "biotype": "embedding",      # appends ids as a column
+            "ref_long": "embedding",
+            "alt_long": "embedding",
+            "scoreset": "embedding",
+            # "consequence": "multi_hot"   # appends multihot columns
+        }
     )
     print(">>> dataset built.")
     print(f"Total samples: {len(dataset):,}")
