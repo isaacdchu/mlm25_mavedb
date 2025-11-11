@@ -32,19 +32,11 @@ class AASPConfig:
 
         self.file_path: str = cfg.get("file_path")
 
-        hp = cfg.get("hyperparameters", {}) or {}
-        self.val_frac: float = float(hp.get("val_frac", 0.15))
-        self.test_frac: float = float(hp.get("test_frac", 0.0))
-        self.seed: int = int(hp.get("seed", 0))
-
-        # top-level
-        self.file_path     = cfg.get("file_path")
-
-        # hyperparams block
-        param              = cfg.get("hyperparameters", {})
-        self.val_frac      = float(param.get("val_frac", 0.15))
-        self.test_frac     = float(param.get("test_frac", 0.0))
-        self.seed          = int(param.get("seed", 0))
+        params = cfg.get("parameters", {}) or {}
+        self.val_frac: float = float(params.get("val_frac", 0.15))
+        self.test_frac: float = float(params.get("test_frac", 0.0))
+        self.seed: int = int(params.get("seed", 0))
+        print(self.val_frac, " AAAAAAAAAAA")
 
     def __repr__(self):
         return (

@@ -1,4 +1,5 @@
 import torch
+import time
 
 class Trainer:
     def __init__(
@@ -10,7 +11,7 @@ class Trainer:
         val_loader,
         num_epochs=10,
         save_path="output/baseline_model_best.pth",
-        device="cuda"
+        device="cpu"
     ):
         self.model = model
         self.optimizer = optimizer
@@ -36,6 +37,13 @@ class Trainer:
     def train_epoch(self):
         self.model.train()
         epoch_loss = 0.0
+
+         # --- NEW: for progress %
+        total_batches = len(self.train_loader)
+        last_print = time.time()
+        batch_idx = 0
+        # ---
+
         for (X, y) in self.train_loader:
             X, y = X.to(self.device), y.to(self.device)
             distance = X[:, 0:1]
@@ -57,6 +65,16 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
             epoch_loss += loss.item()
+
+            # ---------- progress heartbeat (every 60s) ----------
+            now = time.time()
+            if now - last_print > 60:  # change to 10 for more frequent updates
+                pct = 100.0 * batch_idx / total_batches
+                print(f"   training... {pct:5.1f}% | "
+                    f"batch {batch_idx}/{total_batches} | "
+                    f"loss={loss.item():.4f}")
+                last_print = now
+            # ----------------------------------------------------
         return epoch_loss / len(self.train_loader)
 
     def validate(self):
