@@ -10,7 +10,7 @@ class Trainer:
         val_loader,
         num_epochs=10,
         save_path="output/baseline_model_best.pth",
-        device="cpu"
+        device="cuda"
     ):
         self.model = model
         self.optimizer = optimizer
