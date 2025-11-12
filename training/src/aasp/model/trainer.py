@@ -92,7 +92,7 @@ class Trainer:
                 scoreset = X[:, 4].long()
                 consequence = X[:, 5:]
                 y_hat = self.model(
-                    distance,
+                    distance=distance,
                     biotype=biotype,
                     ref_aa=ref_aa,
                     alt_aa=alt_aa,
