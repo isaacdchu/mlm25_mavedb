@@ -1,0 +1,2 @@
+class ExampleModel:
+    pass
