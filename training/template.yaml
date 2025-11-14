@@ -1,0 +1,11 @@
+# User will fill in configuration parameters as needed
+# This file should be in the same directory as their main script
+
+data_handler:
+  # Data handling configuration parameters
+trainer:
+  # Training configuration parameters
+predictor:
+  # Prediction configuration parameters
+evaluator:
+  # Evaluation configuration parameters

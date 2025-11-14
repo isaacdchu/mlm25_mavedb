@@ -1,0 +1,37 @@
+# Stores all relevant data paths and configuration parameters for the data handler
+file_path: "../../../../data/train/combined_train_data.pkl"
+parameters:
+  val_frac: 0.16
+  test_frac: 0.0
+  seed: 0
+features:
+  accession: true
+  ensp: true
+  ref_long: true
+  alt_long: true
+  pos: true
+  score: true
+  is_ter: true
+  biotype: true
+  ref_embedding: true
+  alt_embedding: true
+  consequence: true
+  scoreset: true
+
+fuse_mode: "distance"           # or "concat"
+embed_metric: "cosine"          # or "euclidean"
+categorical_config:
+  biotype: "embedding"
+  ref_long: "embedding"
+  alt_long: "embedding"
+  consequence: "multi_hot"
+  scoreset: "embedding"
+
+
+hyperparameters:
+  train_batch_size: 32
+  val_batch_size: 256
+  num_epochs: 10
+  learning_rate: 0.001
+  hidden_dims: [64, 16]
+  dropout_rates: [0.2, 0.1]
