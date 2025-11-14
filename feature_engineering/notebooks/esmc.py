@@ -10,8 +10,8 @@ import pandas as pd
 from torch import Tensor
 import utils
 
-ensp_sequence_map: dict[str, str] = utils.pickle_to_dict(Path("data/ensp_sequence_map.pkl"))
-ensp_embeddings_map: dict[str, Tensor] = utils.pickle_to_dict(Path("data/ensp_embeddings_map.pkl"))
+ensp_sequence_map: dict[str, str] = utils.pickle_to_dict(Path("../data/ensp_sequence_map.pkl"))
+ensp_embeddings_map: dict[str, Tensor] = utils.pickle_to_dict(Path("../data/ensp_embeddings_map.pkl"))
 
 def save_batch(embeddings: list[Tensor], save_path: Path) -> None:
     """
@@ -62,10 +62,10 @@ def process_batch(
 def main(*argv) -> None:
     """
     Main function to get ESM C embeddings for the training dataset and save them.
-    Usage: python get_esm_c_embeddings.py <path/to/csv> <path/to/save/embeddings.pkl> <start_index>
+    Usage: python esmc.py <path/to/csv> <path/to/save/embeddings.pkl> <start_index>
     """
     if len(argv) != 3:
-        print("Usage: python get_esm_c_embeddings.py <path/to/csv> "
+        print("Usage: python esmc.py <path/to/csv> "
             "<path/to/save/embeddings.pkl> <start_index>")
         sys.exit(1)
     logging.basicConfig(filename=Path("notebooks/logs/esm.log"), level=logging.INFO, filemode="a",

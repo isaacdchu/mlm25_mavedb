@@ -347,7 +347,7 @@ def vep_from_pickle(vep_data_path: os.PathLike) -> list[dict]:
     with open(vep_data_path, "rb") as f:
         while True:
             try:
-                vep_data.append(pickle.load(f))
+                vep_data.extend(data for data in pickle.load(f))
             except EOFError:
                 break
     return vep_data

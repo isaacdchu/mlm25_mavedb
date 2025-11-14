@@ -2,4 +2,9 @@ data/train/train_vep.pkl filter=lfs diff=lfs merge=lfs -text
 data/ensp_embeddings_map.pkl filter=lfs diff=lfs merge=lfs -text
 data/train/ensp_embeddings.pkl filter=lfs diff=lfs merge=lfs -text
 data/train/combined_train_data.pkl filter=lfs diff=lfs merge=lfs -text
+<<<<<<< HEAD
+=======
+data/test/test_vep.pkl filter=lfs diff=lfs merge=lfs -text
+data/test/ensp_embeddings.pkl filter=lfs diff=lfs merge=lfs -text
+>>>>>>> 28250348cbd7cf7f9eb3cf7e6e9428a8464136c0
 data/test/combined_test_data.pkl filter=lfs diff=lfs merge=lfs -text

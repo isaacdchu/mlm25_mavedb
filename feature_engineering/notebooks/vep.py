@@ -57,7 +57,7 @@ def process_batch(
     error_occured: bool = False
     for result in sorted_results:
         if result[0] < 0:
-            logging.error("Failed to fetch VEP data for index %d", 1-result[0])
+            logging.error("Failed to fetch VEP data for index %d", -1-result[0])
             error_occured = True
     if not error_occured:
         for result in sorted_results:
@@ -96,6 +96,7 @@ def get_vep_data_threaded(index: int, ensp: str, pos: int, alt_long: str) -> tup
             error_msg = str(e)
         except Exception as e:
             logging.error("Error fetching VEP data for index %d: %s", index, e)
+            retries_left -= 1
             error_msg = str(e)
     return (-index-1, {"error": error_msg})
 
@@ -136,10 +137,10 @@ def main(*args) -> None:
             end_index = min(i + 100, len(df)) # this index is exclusive
             logging.info("Processing batch: %d-%d/%d", i, end_index - 1, len(df))
             vep_batch = process_batch(i, end_index, df["ensp"], df["pos"], df["alt_long"])
-            i += 100
+            i = end_index
             logging.info("Saving index %d through %d.", last_index_save, end_index - 1)
-            last_index_save = i
             save_batch(vep_batch, save_path)
+            last_index_save = i
             vep_batch.clear()
             print()
         logging.info("All done! Processed up through index %d.", last_index_save)
@@ -148,7 +149,7 @@ def main(*args) -> None:
         print("Process interrupted by user.")
         logging.warning("Process interrupted by user at index %d. " \
             "Last saved index was %d. Start from index %d to continue work.",
-            i, last_index_save, last_index_save + 1
+            i, last_index_save - 1, last_index_save
         )
         sys.exit(0)
     except (Timeout, ConnectionError) as e:
@@ -160,7 +161,7 @@ def main(*args) -> None:
         logging.error("Unexpected error: %s", e)
     logging.info("Processed up through index %d before error. " \
         "Start from index %d to continue work.",
-        last_index_save, last_index_save + 1
+        last_index_save - 1, last_index_save
     )
     sys.exit(1)
 
