@@ -4,5 +4,10 @@ __pycache__/
 *.pyc
 *.ipynb_checkpoints
 *.ipynb
+*.zip
 data/train/*.pkl
 data/test/*.pkl
+output/
+!output/
+output/*
+!output/.gitkeep

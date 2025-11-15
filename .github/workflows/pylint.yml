@@ -26,10 +26,11 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install uv
         uv sync                        # install dependencies
+        bash setup.sh                  # install pytorch
         source .venv/bin/activate      # use virtual environment
         pip install -e .               # make project importable
     - name: Analyzing the code with pylint
       run: |
         source .venv/bin/activate
         echo "Starting pylint analysis..."
-        uv run pylint $(git ls-files '*.py' | grep -v '^example\.py$')
+        uv run pylint $(git ls-files '*.py')

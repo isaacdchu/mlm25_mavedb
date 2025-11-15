@@ -5,3 +5,5 @@ https://www.kaggle.com/competitions/mave-db-amino-acid-substitution-prediction/d
 # Pickle files
 ensp_embeddings_map.pkl
 - Dictionary from ENSP ("ENSP00000252519.3") to an ESM C embedding
+ensp_sequence_map.pkl
+- Dictionary from ENSP to the full protein sequence
