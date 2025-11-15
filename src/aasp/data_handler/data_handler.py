@@ -1,2 +1,0 @@
-class DataHandler:
-    pass
