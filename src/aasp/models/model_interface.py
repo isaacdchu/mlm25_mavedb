@@ -10,22 +10,27 @@ from aasp_dataset import AASPDataset
 
 class Model(Module, ABC):
     @abstractmethod
-    def __init__(self, params: Dict[str, Any], device: str) -> None:
+    def __init__(self, params: Dict[str, Any]) -> None:
         raise NotImplementedError("Model is an abstract class and cannot be instantiated directly.")
+
     @staticmethod
     @abstractmethod
     def transform(data: pd.DataFrame) -> None:
         raise NotImplementedError("Subclasses must implement the transform method.")
+
     @abstractmethod
     def forward(self, x: Tensor) -> Tensor:
         raise NotImplementedError("Subclasses must implement the forward method.")
+
     @abstractmethod
     def train_loop(self, dataset: AASPDataset, criterion: Module, optimizer: Optimizer, params: Dict[str, Any]) -> None:
         raise NotImplementedError("Subclasses must implement the train_loop method.")
+
     @abstractmethod
     def save(self, file_path: str):
         raise NotImplementedError("Subclasses must implement the save method.")
+
     @staticmethod
     @abstractmethod
-    def load(file_path: str, device: str) -> Model:
+    def load(file_path: str) -> Model:
         raise NotImplementedError("Subclasses must implement the load method.")

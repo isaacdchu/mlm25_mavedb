@@ -10,7 +10,7 @@ from model_interface import Model
 from aasp_dataset import AASPDataset
 
 class ExampleModel(Model):
-    def __init__(self, params: Dict[str, Any], device: str) -> None:
+    def __init__(self, params: Dict[str, Any]) -> None:
         pass
 
     @staticmethod
@@ -34,5 +34,5 @@ class ExampleModel(Model):
         pass
 
     @staticmethod
-    def load(file_path: str, device: str) -> ExampleModel:
+    def load(file_path: str) -> ExampleModel:
         pass
