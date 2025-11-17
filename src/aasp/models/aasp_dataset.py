@@ -1,3 +1,7 @@
+"""
+AASPDataset module f
+"""
+
 from __future__ import annotations
 from typing import Optional, Callable, List, Tuple
 import pandas as pd
@@ -29,6 +33,6 @@ class AASPDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         return (self.x[idx], self.y[idx])
-    
+
     def __repr__(self) -> str:
         return f"AASPDataset(num_samples={self.shape[0]}, num_features={self.shape[1]})"

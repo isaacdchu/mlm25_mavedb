@@ -1,3 +1,7 @@
+"""
+DataHandler module for loading and encoding data.
+"""
+
 from __future__ import annotations
 from typing import List
 import pickle
@@ -65,7 +69,7 @@ class DataHandler:
         for col in columns:
             # normalize each cell to an iterable of labels (treat NaN as empty)
             col_vals: pd.Series = new_data[col].apply(
-                lambda x: 
+                lambda x:
                     [] if any(pd.isna(x))
                     else (list(x) if isinstance(x, (list, tuple, set)) else [x])
             )

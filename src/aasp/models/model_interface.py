@@ -23,7 +23,13 @@ class Model(Module, ABC):
         raise NotImplementedError("Subclasses must implement the forward method.")
 
     @abstractmethod
-    def train_loop(self, dataset: AASPDataset, criterion: Module, optimizer: Optimizer, params: Dict[str, Any]) -> None:
+    def train_loop(
+        self,
+        dataset: AASPDataset,
+        criterion: Module,
+        optimizer: Optimizer,
+        params: Dict[str, Any]
+    ) -> None:
         raise NotImplementedError("Subclasses must implement the train_loop method.")
 
     @abstractmethod

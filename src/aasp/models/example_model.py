@@ -7,7 +7,7 @@ from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from model_interface import Model
+from .model_interface import Model
 from .aasp_dataset import AASPDataset
 
 class ExampleModel(Model):
