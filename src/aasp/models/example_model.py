@@ -1,13 +1,14 @@
 from __future__ import annotations
 from typing import Dict, Any
 import pandas as pd
-from torch.utils.data import DataLoader
+import torch
+from torch import Tensor
 from torch.nn import Module
 from torch.optim import Optimizer
-from torch import Tensor
+from torch.utils.data import DataLoader
 
 from model_interface import Model
-from aasp_dataset import AASPDataset
+from .aasp_dataset import AASPDataset
 
 class ExampleModel(Model):
     def __init__(self, params: Dict[str, Any]) -> None:
