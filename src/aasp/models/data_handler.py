@@ -27,6 +27,7 @@ class DataHandler:
     def one_hot_encode(data: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
         """
         One-hot encode specified columns in the DataFrame by adding new columns.
+        Removes the original columns after encoding.
         Args:
             data (pd.DataFrame): The input DataFrame.
             columns (List[str]): List of column names to one-hot encode.
@@ -39,12 +40,14 @@ class DataHandler:
         missing = set(columns) - set(data.columns)
         if missing:
             raise KeyError(f"Columns not found in DataFrame: {sorted(missing)}")
-        return pd.get_dummies(data, columns=columns, prefix=columns)
+        new_df: pd.DataFrame = pd.get_dummies(data, columns=columns, prefix=columns, dtype=int)
+        return new_df
 
     @staticmethod
     def multi_hot_encode(data: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
         """
-        Multi-hot encode specified columns in the DataFrame by adding new columns.
+        Multi-hot encode specified columns in the DataFrame.
+        Removes the original columns after encoding.
         Args:
             data (pd.DataFrame): The input DataFrame.
             columns (List[str]): List of column names to multi-hot encode.
@@ -77,4 +80,5 @@ class DataHandler:
                 columns=col_names
             )
             new_data = new_data.join(dummies)
+        new_data.drop(columns=columns, inplace=True)
         return new_data
