@@ -1,5 +1,5 @@
 """
-DataHandler module for loading and encoding data.
+DataHandler module for loading and encoding data
 """
 
 from __future__ import annotations
@@ -12,16 +12,16 @@ from sklearn.preprocessing import MultiLabelBinarizer
 
 class DataHandler:
     """
-    Static class for handling data operations.
+    Static class for handling data operations
     """
     @staticmethod
     def load_data(file_path: str) -> pd.DataFrame:
         """
-        Load data from a pickle file.
+        Load data from a pickle file
         Args:
-            file_path (str): Path to the pickle file.
+            file_path (str): Path to the pickle file
         Returns:
-            pd.DataFrame: Loaded DataFrame.
+            pd.DataFrame: Loaded DataFrame
         """
         with open(file_path, "rb") as f:
             data: pd.DataFrame = pickle.load(f)
@@ -30,15 +30,16 @@ class DataHandler:
     @staticmethod
     def one_hot_encode(data: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
         """
-        One-hot encode specified columns in the DataFrame by adding new columns.
-        Removes the original columns after encoding.
+        One-hot encode specified columns in the DataFrame by adding new columns
+        Removes the original columns after encoding
         Args:
-            data (pd.DataFrame): The input DataFrame.
-            columns (List[str]): List of column names to one-hot encode.
-        Returns:
-            pd.DataFrame: DataFrame with one-hot encoded columns.
+            data (pd.DataFrame): The input DataFrame
+            columns (List[str]): List of column names to one-hot encode
+        Returns: pd.DataFrame
+            DataFrame with one-hot encoded columns
         Raises:
-            KeyError: If any of the specified columns are not found in the DataFrame.
+            KeyError:
+                If any of the specified columns are not found in the DataFrame.
         """
         # validate columns
         missing = set(columns) - set(data.columns)
@@ -50,15 +51,16 @@ class DataHandler:
     @staticmethod
     def multi_hot_encode(data: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
         """
-        Multi-hot encode specified columns in the DataFrame.
-        Removes the original columns after encoding.
+        Multi-hot encode specified columns in the DataFrame
+        Removes the original columns after encoding
         Args:
-            data (pd.DataFrame): The input DataFrame.
-            columns (List[str]): List of column names to multi-hot encode.
-        Returns:
-            pd.DataFrame: DataFrame with multi-hot encoded columns.
+            data (pd.DataFrame): The input DataFrame
+            columns (List[str]): List of column names to multi-hot encode
+        Returns: pd.DataFrame
+            DataFrame with multi-hot encoded columns
         Raises:
-            KeyError: If any of the specified columns are not found in the DataFrame.
+            KeyError:
+                If any of the specified columns are not found in the DataFrame
         """
         # validate columns
         missing = set(columns) - set(data.columns)
