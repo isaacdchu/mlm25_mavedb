@@ -27,6 +27,7 @@ class AASPDataset(Dataset):
         feature_names (List[str]):
             List of feature column names in the DataFrame
     """
+
     def __init__(
         self,
         data: pd.DataFrame,

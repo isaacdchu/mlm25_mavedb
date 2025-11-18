@@ -14,6 +14,7 @@ class DataHandler:
     """
     Static class for handling data operations
     """
+
     @staticmethod
     def load_data(file_path: str) -> pd.DataFrame:
         """
