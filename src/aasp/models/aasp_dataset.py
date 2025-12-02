@@ -32,7 +32,7 @@ class AASPDataset(Dataset):
         self,
         data: pd.DataFrame,
         device: str = "cpu",
-        transform: Optional[Callable[[pd.DataFrame], None]] = None
+        transform: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None
     ) -> None:
         """
         Initialize the AASPDataset with a pandas DataFrame
@@ -49,9 +49,9 @@ class AASPDataset(Dataset):
             None
         """
         self.device: str = device
-        self.transform: Optional[Callable[[pd.DataFrame], None]] = transform
+        self.transform: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = transform
         if transform:
-            transform(data)
+            data = transform(data)
         # Convert DataFrame rows to Tensors and store in self.x and self.y
         # Assumes data is a 2D array with numeric features and a "score" column
         self.feature_names: List[str] = [col for col in data.columns if col != "score"]
