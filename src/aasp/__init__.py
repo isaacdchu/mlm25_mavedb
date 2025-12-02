@@ -11,3 +11,4 @@ from .predictor import Predictor
 
 from .models.example_model import ExampleModel
 from .models.baseline_model import BaselineModel
+from .models.experiment_model import ExperimentModel
