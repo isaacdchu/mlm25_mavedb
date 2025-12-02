@@ -19,20 +19,19 @@ class Model(Module, ABC):
     Abstract base class for AASP models
     """
 
-    @abstractmethod
-    def __init__(self, params: Dict[str, Any]) -> None: # pylint: disable=super-init-not-called
+    def __init__(self) -> None:
         """
-        Initialize the model with given parameters
+        Should initialize the model with given parameters
         Args:
             params (Dict[str, Any]):
                 Model-specific parameters
         Returns: None
         """
-        raise NotImplementedError("Model is an abstract class and cannot be instantiated.")
+        super().__init__()
 
     @staticmethod
     @abstractmethod
-    def transform(data: pd.DataFrame) -> None:
+    def transform(data: pd.DataFrame) -> pd.DataFrame:
         """
         Data processing method specific to the model
         Used in conjunction with AASPDataset
