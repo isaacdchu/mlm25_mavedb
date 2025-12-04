@@ -5,7 +5,7 @@ Wrapper around torch.nn.Module
 """
 
 from __future__ import annotations
-from typing import Dict, Any
+from typing import Dict, Any, List
 from abc import ABC, abstractmethod
 import pandas as pd
 from torch import Tensor
@@ -29,9 +29,8 @@ class Model(Module, ABC):
         """
         super().__init__()
 
-    @staticmethod
     @abstractmethod
-    def transform(data: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Data processing method specific to the model
         Used in conjunction with AASPDataset
@@ -42,7 +41,7 @@ class Model(Module, ABC):
         raise NotImplementedError("Subclasses must implement the transform method.")
 
     @abstractmethod
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: List[Tensor]) -> Tensor:
         """
         Forward pass of the model
         Args:

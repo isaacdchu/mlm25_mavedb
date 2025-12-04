@@ -14,10 +14,14 @@ class AASPDataset(Dataset):
     """
     PyTorch Dataset for loading data from a pandas DataFrame into PyTorch Tensors
     Members variables:
-        x (Tensor):
-            Feature tensor (N, F) where N is number of samples and F is number of features
-        y (Tensor):
-            Label tensor (N, 1) where N is number of samples
+        x (List[Tuple[Tensor, ...]]):
+            List of length N of tuples of length F of feature tensors.
+            Each feature tensor has shape (E,) where
+                N = number of samples
+                F = number of features
+                E = embedding size (1 for scalar features)
+        y (List[Tensor]):
+            List of all label tensor (N, 1) where N is number of samples
         shape (Tuple[int, ...]):
             Shape of the dataset (N, F)
         transform (Optional[Callable[[pd.DataFrame], None]]):
@@ -52,14 +56,27 @@ class AASPDataset(Dataset):
         self.transform: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = transform
         if transform:
             data = transform(data)
-        # Convert DataFrame rows to Tensors and store in self.x and self.y
-        # Assumes data is a 2D array with numeric features and a "score" column
-        self.feature_names: List[str] = [col for col in data.columns if col != "score"]
-        x: np.ndarray = data[self.feature_names].to_numpy(dtype=np.float32)  # shape (N, F)
-        y: np.ndarray = data["score"].to_numpy(dtype=np.float32)        # shape (N, 1)
-        self.x: Tensor = torch.from_numpy(x).to(device=self.device, dtype=torch.float32)
-        self.y: Tensor = torch.from_numpy(y).to(device=self.device, dtype=torch.float32).unsqueeze(1)
-        self.shape: Tuple[int, ...] = (self.x.shape[0], self.x.shape[1])
+        
+        # Initialize self.x and self.y
+        # Extract labels (score column) and convert to a list of tensors
+        self.y: List[Tensor] = [
+            torch.tensor([label], device=self.device, dtype=torch.float32)
+            for label in data["score"].values
+        ]
+
+        # Extract features (all columns except "score") and convert to a list of lists of tensors
+        self.x: List[List[Tensor]] = [
+            [
+                torch.tensor(value, device=self.device, dtype=torch.float32)
+                if np.isscalar(value)
+                else torch.tensor(value, device=self.device, dtype=torch.float32)
+                for value in row
+            ]
+            for row in data.drop(columns=["score"]).values
+        ]
+
+        # Store the shape of the dataset
+        self.shape: Tuple[int, int] = (len(self.y), len(self.x[0]) if self.x else 0)
 
     def __len__(self) -> int:
         """
@@ -69,13 +86,13 @@ class AASPDataset(Dataset):
         """
         return self.shape[0]
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
+    def __getitem__(self, idx: int) -> Tuple[List[Tensor], Tensor]:
         """
         Get the feature tensor and label tensor for a given index
         Args:
             idx (int):
                 Index of the sample to retrieve
-        Returns: Tuple[Tensor, Tensor]
+        Returns: Tuple[List[Tensor], Tensor]
             Tuple containing the feature tensor and label tensor
         """
         return (self.x[idx], self.y[idx])
