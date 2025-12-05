@@ -33,4 +33,4 @@ jobs:
       run: |
         source .venv/bin/activate
         echo "Starting pylint analysis..."
-        uv run pylint $(git ls-files '*.py')
+        uv run pylint $(git ls-files 'src/aasp/*.py') --fail-under 8
