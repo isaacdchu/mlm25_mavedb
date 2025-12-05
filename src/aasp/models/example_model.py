@@ -14,8 +14,7 @@ class ExampleModel(Model):
     def __init__(self, params: Dict[str, Any]) -> None:
         pass
 
-    @staticmethod
-    def transform(data: pd.DataFrame) -> None:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         pass
 
     def forward(self, x: Tensor) -> Tensor:

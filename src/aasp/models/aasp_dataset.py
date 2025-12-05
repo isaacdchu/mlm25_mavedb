@@ -5,7 +5,6 @@ AASPDataset class for PyTorch
 from __future__ import annotations
 from typing import Optional, Callable, List, Tuple
 import pandas as pd
-import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
@@ -14,7 +13,7 @@ class AASPDataset(Dataset):
     """
     PyTorch Dataset for loading data from a pandas DataFrame into PyTorch Tensors
     Members variables:
-        x (List[Tuple[Tensor, ...]]):
+        x (List[List[Tensor]]):
             List of length N of tuples of length F of feature tensors.
             Each feature tensor has shape (E,) where
                 N = number of samples
@@ -24,7 +23,7 @@ class AASPDataset(Dataset):
             List of all label tensor (N, 1) where N is number of samples
         shape (Tuple[int, ...]):
             Shape of the dataset (N, F)
-        transform (Optional[Callable[[pd.DataFrame], None]]):
+        transform (Optional[Callable[[pd.DataFrame], pd.DataFrame]]):
             Optional transformation function applied to the DataFrame
         device (str):
             Device to store the tensors on (eg "cpu" or "cuda")
@@ -67,8 +66,8 @@ class AASPDataset(Dataset):
         # Extract features (all columns except "score") and convert to a list of lists of tensors
         self.x: List[List[Tensor]] = [
             [
-                torch.tensor(value, device=self.device, dtype=torch.float32)
-                if np.isscalar(value)
+                torch.tensor(value, device=self.device, dtype=torch.long)
+                if isinstance(value, int)
                 else torch.tensor(value, device=self.device, dtype=torch.float32)
                 for value in row
             ]
