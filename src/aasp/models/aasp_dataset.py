@@ -39,8 +39,7 @@ class AASPDataset(Dataset):
     ) -> None:
         """
         Initialize the AASPDataset with a pandas DataFrame
-        Assumes that the DataFrame contains a "score" column for labels,
-        and all other columns are numeric scalar features
+        Assumes that the DataFrame contains a "score" column for labels
         Initialization preserves the order of columns given by "transform" if provided
         Args:
             data (pd.DataFrame):

@@ -12,3 +12,5 @@ from .predictor import Predictor
 from .models.example_model import ExampleModel
 from .models.baseline_model import BaselineModel
 from .models.experiment_model import ExperimentModel
+from .models.nn_model import NNModel
+from .models.scoreset_model import ScoresetModel
