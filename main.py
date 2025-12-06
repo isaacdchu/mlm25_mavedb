@@ -4,6 +4,7 @@ import inspect
 import os
 from pathlib import Path
 from typing import List, Dict, Type, Tuple, Optional, Any
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import torch
@@ -48,6 +49,11 @@ def _normalize_embedding_column(col: pd.Series) -> pd.Series:
             return np.asarray(val, dtype=np.float32)
         return val
     return col.apply(_convert)
+
+
+def _ensure_output_dirs() -> None:
+    Path("output/models").mkdir(parents=True, exist_ok=True)
+    Path("output/submissions").mkdir(parents=True, exist_ok=True)
 
 
 def _load_dataframe(path: str) -> pd.DataFrame:
@@ -248,6 +254,63 @@ def _train_and_eval_single(
     return mse_sum / max(count, 1)
 
 
+def _train_full(
+    model_cls: Type[model_registry.Model],
+    data: pd.DataFrame,
+    device: torch.device,
+    epochs: int,
+    batch_size: int
+) -> model_registry.Model:
+    model_params: Dict[str, Any] = {}
+    if model_cls.__name__ == "XGBModel":
+        model_params = {
+            "xgb_params": {
+                "n_estimators": 800,
+                "learning_rate": 0.05,
+                "max_depth": 7,
+                "subsample": 0.9,
+                "colsample_bytree": 0.9,
+                "objective": "reg:squarederror",
+                "n_jobs": max(1, os.cpu_count() or 1),
+            },
+            "fit_params": {
+                "verbose": False,
+            },
+        }
+    model = model_cls(params=model_params)
+    transformed = model.transform(data.copy())
+    dataset = AASPDataset(transformed, device=str(device))
+    trainer = Trainer(model)
+    criterion = torch.nn.SmoothL1Loss(beta=1.0)
+    params_list = [p for p in model.parameters() if p.requires_grad]
+    if not params_list:
+        params_list = [torch.nn.Parameter(torch.zeros(1, requires_grad=True))]
+    optimizer = torch.optim.Adam(params_list, lr=1e-3)
+    trainer.train(dataset, criterion, optimizer, {"batch_size": batch_size, "num_epochs": epochs})
+    model.eval()
+    return model
+
+
+def _predict_dataframe(
+    model: model_registry.Model,
+    df: pd.DataFrame,
+    device: torch.device
+) -> np.ndarray:
+    if "score" not in df.columns:
+        df = df.copy()
+        df["score"] = 0.0
+    transformed = model.transform(df.copy())
+    dataset = AASPDataset(transformed, device=str(device))
+    loader = DataLoader(dataset, batch_size=256, shuffle=False)
+    preds_list: List[np.ndarray] = []
+    with torch.no_grad():
+        for x_batch, _ in loader:
+            features = [tensor.to(device=device, dtype=torch.float32) for tensor in x_batch]
+            outputs = model.forward(features)
+            preds_list.append(outputs.detach().cpu().numpy().reshape(-1))
+    return np.concatenate(preds_list, axis=0)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run one or all AASP models on the training data.")
     parser.add_argument("--model", type=str, help="Name of a single model class to run.")
@@ -256,6 +319,9 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=32, help="Batch size for training and validation.")
     parser.add_argument("--train-path", type=str, default="data/train/combined_train_data.pkl", help="Path to the training data (.pkl or .csv).")
     parser.add_argument("--test-path", type=str, default="data/test/combined_test_data.pkl", help="Path to the test data (.pkl or .csv, optional).")
+    parser.add_argument("--save-model", action="store_true", help="Save trained model to output/models/.")
+    parser.add_argument("--predict", action="store_true", help="Load saved model and generate submission CSV.")
+    parser.add_argument("--submission-name", type=str, default=None, help="Optional submission filename override.")
     args = parser.parse_args()
 
     available_models = _get_available_models()
@@ -275,7 +341,9 @@ def main() -> None:
     use_combined = default_train.exists() and default_test.exists()
 
     if use_combined:
-        print("Using combined dataset pickles.")
+        mode_banner = "Predicting" if args.predict else "Training"
+        target = list(models_to_run.keys())[0] if len(models_to_run) == 1 else "models"
+        print(f"{mode_banner} {target} on combined dataset pickles.")
         train_df = pd.read_pickle(default_train)
         if "consequences" in train_df.columns:
             train_df = DataHandler.multi_hot_encode(train_df, columns=["consequences"])
@@ -306,6 +374,47 @@ def main() -> None:
             except FileNotFoundError:
                 print(f"Warning: test data not found at {args.test_path}")
 
+    _ensure_output_dirs()
+
+    if args.predict:
+        if args.model is None:
+            raise ValueError("Prediction requires --model to be specified.")
+        model_name = args.model
+        model_cls = available_models.get(model_name)
+        if model_cls is None:
+            raise ValueError(f"Model '{model_name}' not found.")
+        model_path = Path("output/models") / (f"{model_name}.pkl" if model_name == "XGBModel" else f"{model_name}.pt")
+        if not model_path.exists():
+            raise FileNotFoundError(f"Saved model not found at {model_path}")
+        model = model_cls.load(str(model_path))
+        test_df = pd.read_pickle(default_test if use_combined else args.test_path)
+        if "consequences" in test_df.columns:
+            test_df = DataHandler.multi_hot_encode(test_df, columns=["consequences"])
+        for col in ["ref_embedding", "alt_embedding"]:
+            if col in test_df.columns:
+                test_df[col] = _normalize_embedding_column(test_df[col])
+        test_df = DataHandler.add_rel_pos(test_df)
+        id_col = "id" if "id" in test_df.columns else "accession" if "accession" in test_df.columns else test_df.columns[0]
+        preds = _predict_dataframe(model, test_df, device=device)
+        preds = np.asarray(preds, dtype=np.float32)
+        if np.any(~np.isfinite(preds)):
+            finite_mask = np.isfinite(preds)
+            fill = float(np.nanmean(preds[finite_mask])) if finite_mask.any() else 0.0
+            preds[~finite_mask] = fill
+        timestamp = args.submission_name or datetime.now().strftime("%Y%m%d_%H%M%S")
+        sub_path = Path("output/submissions") / f"{timestamp}_{model_name}.csv"
+        pd.DataFrame({id_col: test_df[id_col], "prediction": preds}).to_csv(sub_path, index=False)
+        print(f"Predicting with {model_name} \u2192 {sub_path}")
+        try:
+            from submission_validator import validate  # type: ignore
+            ok, msg = validate(str(sub_path))
+            print(f"Local submission validation: {'PASS' if ok else 'FAIL'}")
+            if msg:
+                print(msg)
+        except Exception:
+            pass
+        return
+
     for name, cls in models_to_run.items():
         if cls is None:
             continue
@@ -318,6 +427,16 @@ def main() -> None:
                 batch_size=args.batch_size
             )
             print(f"{name}: validation MSE={mse:.6f}")
+            if args.save_model:
+                trained_model = _train_full(
+                    model_cls=cls,
+                    data=enriched_df,
+                    device=device,
+                    epochs=args.epochs,
+                    batch_size=args.batch_size
+                )
+                model_path = Path("output/models") / (f"{name}.pkl" if name == "XGBModel" else f"{name}.pt")
+                trained_model.save(str(model_path))
         except Exception as exc:  # pylint: disable=broad-except
             print(f"{name}: failed with error: {exc}")
 
