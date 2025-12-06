@@ -3,7 +3,8 @@ AASPDataset class for PyTorch
 """
 
 from __future__ import annotations
-from typing import Optional, Callable, List, Tuple
+from typing import Optional, Callable, List, Tuple, Union
+import numpy as np
 import pandas as pd
 import torch
 from torch import Tensor
@@ -51,6 +52,22 @@ class AASPDataset(Dataset):
         Returns: None
             None
         """
+
+        def _to_tensor(value: Union[Tensor, float, int, bool, List[float], Tuple[float, ...], np.ndarray]) -> Tensor:
+            if isinstance(value, torch.Tensor):
+                return value.detach().clone().to(device=self.device)
+            if isinstance(value, (bool, np.bool_)):
+                return torch.tensor(value, device=self.device, dtype=torch.float32)
+            if isinstance(value, (int, np.integer)):
+                return torch.tensor(value, device=self.device, dtype=torch.long)
+            if isinstance(value, (float, np.floating)):
+                return torch.tensor(value, device=self.device, dtype=torch.float32)
+            if isinstance(value, (list, tuple, np.ndarray)):
+                arr = np.asarray(value)
+                dtype = torch.float32 if np.issubdtype(arr.dtype, np.floating) or arr.dtype == bool else torch.long
+                return torch.as_tensor(arr, device=self.device, dtype=dtype)
+            return torch.tensor(float(value), device=self.device, dtype=torch.float32)
+
         self.device: str = device
         self.transform: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = transform
         if transform:
@@ -66,9 +83,7 @@ class AASPDataset(Dataset):
         # Extract features (all columns except "score") and convert to a list of lists of tensors
         self.x: List[List[Tensor]] = [
             [
-                torch.tensor(value, device=self.device, dtype=torch.long)
-                if isinstance(value, int)
-                else torch.tensor(value, device=self.device, dtype=torch.float32)
+                _to_tensor(value)
                 for value in row
             ]
             for row in data.drop(columns=["score"]).values
