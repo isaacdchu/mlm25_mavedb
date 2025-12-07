@@ -11,13 +11,10 @@ class Predictor:
     def __init__(self, model: Model) -> None:
         self.model: Model = model
 
-    def predict(self, dataset: AASPDataset) -> List[Tensor]:
+    def predict(self, dataset: AASPDataset) -> Tensor:
         data_loader: DataLoader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
-        predictions: List[Tensor] = []
         self.model.eval()
-        (x, y) = next(iter(data_loader))
+        (x, _) = next(iter(data_loader))
         x: List[Tensor] = [tensor.to(dtype=torch.float32, device=dataset.device) for tensor in x]
-        y: Tensor = y.to(dtype=torch.float32, device=dataset.device)
         output: Tensor = self.model(x)
-        predictions.append(output)
-        return predictions
+        return output

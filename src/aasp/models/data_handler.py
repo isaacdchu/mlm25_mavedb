@@ -3,7 +3,7 @@ DataHandler module for loading and encoding data
 """
 
 from __future__ import annotations
-from typing import List, Any, Callable
+from typing import List
 import pickle
 import pandas as pd
 import numpy as np
@@ -89,27 +89,3 @@ class DataHandler:
             new_data = new_data.join(dummies)
         new_data.drop(columns=columns, inplace=True)
         return new_data
-    
-    # @staticmethod
-    # def embed(data: pd.DataFrame, columns: List[str], embed_func: Callable[[pd.Series], pd.Series]) -> pd.DataFrame:
-    #     """
-    #     Embed specified columns in the DataFrame using a provided embedding function
-    #     Args:
-    #         data (pd.DataFrame): The input DataFrame
-    #         columns (List[str]): List of column names to embed
-    #         embed_func (Callable[[Any], None]): Function that takes a value and returns its embedding as a numpy array
-    #     Returns: pd.DataFrame
-    #         DataFrame with embedded columns
-    #     Raises:
-    #         KeyError:
-    #             If any of the specified columns are not found in the DataFrame
-    #     """
-    #     # validate columns
-    #     missing = set(columns) - set(data.columns)
-    #     if missing:
-    #         raise KeyError(f"Columns not found in DataFrame: {sorted(missing)}")
-    #     new_data: pd.DataFrame = data.copy(deep=True)
-    #     for col in columns:
-    #         embeddings: pd.Series = embed_func(new_data[col])
-    #         new_data[col] = embeddings
-    #     return new_data

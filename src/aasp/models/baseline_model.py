@@ -38,21 +38,25 @@ class BaselineModel(Model):
 
     def train_loop(
         self,
-        dataset: AASPDataset,
+        train_dataset: AASPDataset,
+        test_dataset: AASPDataset,
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]
     ) -> None:
         batch_size: int = abs(params.get('batch_size', 32))
         num_epochs: int = abs(params.get('num_epochs', 10))
-        data_loader: DataLoader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        if train_dataset.device != test_dataset.device:
+            raise ValueError("Train and test datasets must be on the same device")
+        device = train_dataset.device
+        data_loader: DataLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         self.train()
-        self.to(dataset.device)
+        self.to(device=device)
         for epoch in range(num_epochs):
             for batch_idx, (x, y) in enumerate(data_loader):
                 optimizer.zero_grad()
-                x: List[Tensor] = [tensor.to(dtype=torch.float32, device=dataset.device) for tensor in x]
-                y: Tensor = y.to(dtype=torch.float32, device=dataset.device)
+                x: List[Tensor] = [tensor.to(dtype=torch.float32, device=device) for tensor in x]
+                y: Tensor = y.to(dtype=torch.float32, device=device)
                 outputs: Tensor = self.forward(x)
                 loss: Tensor = criterion(outputs, y)
                 loss.backward()

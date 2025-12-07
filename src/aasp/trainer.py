@@ -12,9 +12,16 @@ class Trainer:
 
     def train(
         self,
-        dataset: AASPDataset,
+        train_dataset: AASPDataset,
+        test_dataset: AASPDataset,
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]
     ) -> None:
-        self.model.train_loop(dataset, criterion, optimizer, params)
+        self.model.train_loop(
+            train_dataset=train_dataset,
+            test_dataset=test_dataset,
+            criterion=criterion,
+            optimizer=optimizer,
+            params=params
+        )

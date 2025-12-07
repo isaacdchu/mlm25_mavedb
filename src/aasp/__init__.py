@@ -14,3 +14,4 @@ from .models.baseline_model import BaselineModel
 from .models.experiment_model import ExperimentModel
 from .models.nn_model import NNModel
 from .models.scoreset_model import ScoresetModel
+from .models.embedding_model import EmbeddingModel

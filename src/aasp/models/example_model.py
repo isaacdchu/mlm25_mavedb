@@ -22,7 +22,8 @@ class ExampleModel(Model):
 
     def train_loop(
         self,
-        dataset: AASPDataset,
+        train_dataset: AASPDataset,
+        test_dataset: AASPDataset,
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]

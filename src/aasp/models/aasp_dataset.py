@@ -58,12 +58,16 @@ class AASPDataset(Dataset):
         
         # Initialize self.x and self.y
         # Extract labels (score column) and convert to a list of tensors
+        if "score" not in data.columns:
+            print("No score column found in data; initializing dummy labels to zero.")
+            data["score"] = [0.0] * len(data)
         self.y: List[Tensor] = [
             torch.tensor([label], device=self.device, dtype=torch.float32)
             for label in data["score"].values
         ]
 
         # Extract features (all columns except "score") and convert to a list of lists of tensors
+        feature_data: pd.DataFrame = data.drop(columns=["score"]) if "score" in data.columns else data
         self.x: List[List[Tensor]] = [
             [
                 torch.tensor(value, device=self.device, dtype=torch.long)
@@ -71,7 +75,7 @@ class AASPDataset(Dataset):
                 else torch.tensor(value, device=self.device, dtype=torch.float32)
                 for value in row
             ]
-            for row in data.drop(columns=["score"]).values
+            for row in feature_data.values
         ]
 
         # Store the shape of the dataset

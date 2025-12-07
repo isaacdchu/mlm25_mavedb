@@ -64,23 +64,27 @@ class ScoresetModel(Model):
 
     def train_loop(
         self,
-        dataset: AASPDataset,
+        train_dataset: AASPDataset,
+        test_dataset: AASPDataset,
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]
     ) -> None:
+        if train_dataset.device != test_dataset.device:
+            raise ValueError("Train and test datasets must be on the same device")
+        device = train_dataset.device
         batch_size: int = abs(params.get('batch_size', 32))
         num_epochs: int = abs(params.get('num_epochs', 10))
-        data_loader: DataLoader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        data_loader: DataLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         self.train()
-        self.to(device=dataset.device)
-        self.model.to(device=dataset.device)
-        self.scoreset_emb.to(device=dataset.device)
+        self.to(device=device)
+        self.model.to(device=device)
+        self.scoreset_emb.to(device=device)
         for epoch in range(num_epochs):
             for batch_idx, (x, y) in enumerate(data_loader):
                 optimizer.zero_grad()
-                x: List[Tensor] = [tensor.to(device=dataset.device) for tensor in x]
-                y: Tensor = y.to(dtype=torch.float32, device=dataset.device)
+                x: List[Tensor] = [tensor.to(device=device) for tensor in x]
+                y: Tensor = y.to(dtype=torch.float32, device=device)
                 outputs: Tensor = self.forward(x)
                 loss: Tensor = criterion(outputs, y)
                 loss.backward()
