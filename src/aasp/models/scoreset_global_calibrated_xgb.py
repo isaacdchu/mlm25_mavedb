@@ -255,6 +255,14 @@ class ScoresetGlobalCalibratedXGBModel(Model):
                 reg.fit(y_pred_s.reshape(-1, 1), y_true_s)
                 self.calibrators[int(sid)] = reg
 
+        # auto-save trained model
+        try:
+            import os
+            os.makedirs("models/saved_models", exist_ok=True)
+            self.save("models/saved_models/global_calibrated_xgb")
+        except Exception:
+            pass
+
     # ------------------------------------------------------------------
     def forward(self, inputs: List[Tensor]) -> Tensor:
         if self.model is None:
@@ -277,6 +285,11 @@ class ScoresetGlobalCalibratedXGBModel(Model):
             else:
                 y_final[i] = y_pred_orig[i]
 
+        # Auto-save after training
+        try:
+            self.save("models/saved_models/global_calibrated_xgb_full.pt")
+        except Exception:
+            pass
         return torch.tensor(y_final, dtype=torch.float32, device=self.device)
 
     # ------------------------------------------------------------------
