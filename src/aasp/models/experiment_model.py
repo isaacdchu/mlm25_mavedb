@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, List, Dict
+from typing import Dict, Any, List, Dict, Optional
 import pandas as pd
 import numpy as np
 import torch
@@ -84,14 +84,14 @@ class ExperimentModel(Model):
     def train_loop(
         self,
         train_dataset: AASPDataset,
-        test_dataset: AASPDataset,
+        test_dataset: Optional[AASPDataset],
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]
     ) -> None:
         batch_size: int = abs(params.get('batch_size', 32))
         num_epochs: int = abs(params.get('num_epochs', 10))
-        if train_dataset.device != test_dataset.device:
+        if test_dataset is not None and train_dataset.device != test_dataset.device:
             raise ValueError("Train and test datasets must be on the same device")
         device = train_dataset.device
         data_loader: DataLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)

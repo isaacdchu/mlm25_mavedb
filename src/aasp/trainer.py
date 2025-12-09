@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from torch.nn import Module
 from torch.optim import Optimizer
 
@@ -13,7 +13,7 @@ class Trainer:
     def train(
         self,
         train_dataset: AASPDataset,
-        test_dataset: AASPDataset,
+        test_dataset: Optional[AASPDataset],
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]

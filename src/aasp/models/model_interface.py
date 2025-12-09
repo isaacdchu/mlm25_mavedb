@@ -5,7 +5,7 @@ Wrapper around torch.nn.Module
 """
 
 from __future__ import annotations
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 import pandas as pd
 from torch import Tensor
@@ -55,7 +55,7 @@ class Model(Module, ABC):
     def train_loop(
         self,
         train_dataset: AASPDataset,
-        test_dataset: AASPDataset,
+        test_dataset: Optional[AASPDataset],
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]

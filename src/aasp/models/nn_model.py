@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import pandas as pd
 import numpy as np
 import torch
@@ -82,12 +82,12 @@ class NNModel(Model):
     def train_loop(
         self,
         train_dataset: AASPDataset,
-        test_dataset: AASPDataset,
+        test_dataset: Optional[AASPDataset],
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]
     ) -> None:
-        if train_dataset.device != test_dataset.device:
+        if test_dataset is not None and train_dataset.device != test_dataset.device:
             raise ValueError("Train and test datasets must be on the same device")
         device = train_dataset.device
         batch_size: int = abs(params.get('batch_size', 32))

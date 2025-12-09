@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, List, Dict
+from typing import Dict, Any, List, Optional
 import pandas as pd
 import numpy as np
 import torch
@@ -57,8 +57,8 @@ class EmbeddingModel(Model):
         embedding_similarities: List[float] = []
         embedding_differences: List[np.ndarray] = []
         for _, row in data.iterrows():
-            ref = torch.nan_to_num(row["ref_embedding"])
-            alt = torch.nan_to_num(row["alt_embedding"])
+            ref: Tensor = torch.nan_to_num(row["ref_embedding"])
+            alt: Tensor = torch.nan_to_num(row["alt_embedding"])
             embedding_distances.append(torch.dist(ref, alt, p=2).item())
             embedding_similarities.append(torch.cosine_similarity(ref.unsqueeze(0), alt.unsqueeze(0)).item())
             embedding_differences.append((alt - ref).numpy())
@@ -125,12 +125,12 @@ class EmbeddingModel(Model):
     def train_loop(
         self,
         train_dataset: AASPDataset,
-        test_dataset: AASPDataset,
+        test_dataset: Optional[AASPDataset],
         criterion: Module,
         optimizer: Optimizer,
         params: Dict[str, Any]
     ) -> None:
-        if train_dataset.device != test_dataset.device:
+        if test_dataset is not None and train_dataset.device != test_dataset.device:
             raise ValueError("Train and test datasets must be on the same device")
         device = train_dataset.device
         batch_size: int = abs(params.get('batch_size', 32))
@@ -153,6 +153,8 @@ class EmbeddingModel(Model):
                 optimizer.step()
 
             # Evaluate train and validation loss
+            if test_dataset is None:
+                continue
             self.eval()
             with torch.no_grad():
                 train_loader: DataLoader = DataLoader(train_dataset, batch_size=len(train_dataset), shuffle=False)
