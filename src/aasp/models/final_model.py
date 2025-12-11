@@ -28,6 +28,7 @@ class FinalModel(Model):
         self.scoreset_emb: torch.nn.Embedding
         self.biotype_emb: torch.nn.Embedding
         self.initialized: bool = False
+        self.generator: Optional[torch.Generator] = None
 
     def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         # Select relevant columns
@@ -151,7 +152,7 @@ class FinalModel(Model):
         device = train_dataset.device
         batch_size: int = abs(params.get('batch_size', 32))
         num_epochs: int = abs(params.get('num_epochs', 10))
-        data_loader: DataLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        data_loader: DataLoader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, generator=self.generator)
         self.to(device=device)
         self.model.to(device=device)
         self.scoreset_emb.to(device=device)
@@ -226,3 +227,15 @@ class FinalModel(Model):
         model.scoreset_embedding_dim = checkpoint['scoreset_embedding_dim']
         model.biotype_embedding_dim = checkpoint['biotype_embedding_dim']
         return model
+
+    def set_deterministic(self, seed: int = 0) -> None:
+        """
+        Set random seeds for reproducibility.
+        """
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+        np.random.seed(seed)
+        self.generator = torch.Generator().manual_seed(seed)
