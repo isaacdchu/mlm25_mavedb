@@ -1,0 +1,9 @@
+License
+
+Any user of this project (AASP) is subject to the following terms and conditions.
+These terms and conditions are subject to change without prior notice.
+
+1. The authors of this project are not liable for any misuse of AASP; the user is alone responsible.
+2. Use of AASP is subject to the terms and conditions outlined by any of its "external dependencies," where "external dependencies" includes any software listed in "pyproject.toml" under the "dependencies" category.
+3. Commercial use of AASP is prohibited.
+4. Any use of AASP must be cited appropriately with the following URL: https://github.com/isaacdchu/mlm25_mavedb.git
